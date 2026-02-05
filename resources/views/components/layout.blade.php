@@ -3,53 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campsite Supply Tracker</title>
+    <title>Campsite Booking</title>
     @vite('resources/css/app.css')
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 </head>
-<body class="bg-gray-100 min-h-screen flex">
+<body class="bg-gray-50 text-gray-800 antialiased">
 
-<!-- Sidebar -->
-<aside class="w-64 bg-white border-r border-gray-200 px-4 py-6 space-y-6">
-    <h1 class="text-xl font-bold text-green-600">Campsite Supply Tracker</h1>
-
-    <nav class="space-y-3 text-gray-600">
-        <a href="#" class="block font-medium text-green-600">Dashboard</a>
-        <a href="#" class="block hover:text-green-600">Inventory List</a>
-        <a href="#" class="block hover:text-green-600">Add / Receive Stock</a>
+<!-- Navbar -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-green-700 flex items-center gap-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        CampManager
+                    </span>
+                    <div class="hidden md:flex ml-10 space-x-8">
+                        <a href="/all" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Dashboard</a>
+                        <a href="#" class="border-transparent text-gray-500 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Bookings</a>
+                        <a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Campsites</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">A</div>
+                </div>
+            </div>
+        </div>
     </nav>
 
-    <div class="pt-10 space-y-3 text-gray-500">
-        <a href="#" class="block hover:text-red-500">Settings</a>
-        <a href="#" class="block hover:text-red-500">Logout</a>
-    </div>
-</aside>
-
-<!-- Main -->
-<div class="flex-1 flex flex-col">
-
-<!-- Top Bar -->
-<header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-    <div class="flex items-center bg-gray-100 space-x-4 rounded-lg px-4 py-2 w-80 hover:ring ">
-        <img src="https://img.icons8.com/?size=100&id=HNqs6ySvgu0d&format=png&color=000000" alt="" class="w-4 h-4">
-        <input 
-                type="text"
-                placeholder="Search..."
-                class="focus:outline-none"
-        >
-    </div>
-    
-
-    <div class="flex items-center space-x-4">
-        <img src="https://img.icons8.com/?size=100&id=13717&format=png&color=000000" alt="" class="rounded-full w-8 h-8">
-        <img src="https://img.icons8.com/?size=100&id=23309&format=png&color=000000" class="rounded-full w-10 h-10 object-cover bg-black" />
-    </div>
-</header>
-
 <!-- Content -->
-    <main class="p-6 space-y-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {{ $slot }}
     </main>
-</div>
 
 </body>
 </html>
