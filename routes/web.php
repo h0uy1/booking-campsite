@@ -20,3 +20,6 @@ Route::get('/add', function(){
 
 Route::get('/tents/create', [TentController::class, 'create']);
 Route::post('/tents', [TentController::class, 'store']);
+Route::get('/tents', [TentController::class, 'index']);
+Route::get('/tents/{tent}/edit', [TentController::class, 'edit']);
+Route::post('/tents/{tent}/update', [TentController::class, 'update']);

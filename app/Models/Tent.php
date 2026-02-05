@@ -9,5 +9,5 @@ class Tent extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['type', 'capacity', 'price'];
+    protected $fillable = ['type', 'capacity', 'price', 'image'];
 }
