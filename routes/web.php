@@ -23,3 +23,6 @@ Route::post('/tents', [TentController::class, 'store']);
 Route::get('/tents', [TentController::class, 'index']);
 Route::get('/tents/{tent}/edit', [TentController::class, 'edit']);
 Route::post('/tents/{tent}/update', [TentController::class, 'update']);
+Route::get('/phpinfo', function () {
+    phpinfo();
+});

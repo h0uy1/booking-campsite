@@ -50,6 +50,12 @@
                                     </p>
                                 </div>
                             </div>
+                            
+                            <!-- Image Preview -->
+                            <div id="image-preview-container" class="mt-4 hidden">
+                                <p class="block text-sm font-medium text-gray-700 mb-2">New Image Preview</p>
+                                <img id="image-preview" src="#" alt="Image Preview" class="h-48 w-auto object-cover rounded-md border border-gray-300 shadow-sm">
+                            </div>
                             @error('image')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -99,13 +105,5 @@
         </form>
     </div>
 
-    <script>
-        document.getElementById('image').addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name;
-            const labelText = this.closest('label').querySelector('span');
-            if (fileName) {
-                labelText.textContent = fileName;
-            }
-        });
-    </script>
+
 </x-layout>

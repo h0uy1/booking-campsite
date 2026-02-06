@@ -55,19 +55,28 @@
                                         <p class="pl-1">or drag and drop</p>
                                     </div>
                                     <p class="text-xs text-gray-500">
-                                        PNG, JPG, GIF up to 2MB
+                                        PNG, JPG, GIF up to 5MB
                                     </p>
                                 </div>
                             </div>
+                            
                             @error('image')
-                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @foreach($errors->get('image') as $message)
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @endforeach
                             @enderror
+
+                            <!-- Image Preview -->
+                            <div id="image-preview-container" class="mt-4 hidden">
+                                <p class="block text-sm font-medium text-gray-700 mb-2">Image Preview</p>
+                                <img id="image-preview" src="#" alt="Image Preview" class="h-48 w-full object-cover rounded-md border border-gray-300 shadow-sm">
+                            </div>
                         </div>
 
                         <!-- Type -->
                         <div>
                             <label for="type" class="block text-sm font-medium text-gray-700">Tent Type <span class="text-red-500">*</span></label>
-                            <input type="text" name="type" id="type" required 
+                            <input type="text" name="type" id="type" required value="{{ old('type') }}"
                                 class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border py-2 px-3"
                                 placeholder="e.g. Deluxe Safari Tent">
                         </div>
@@ -76,7 +85,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="capacity" class="block text-sm font-medium text-gray-700">Capacity (People) <span class="text-red-500">*</span></label>
-                                <input type="number" name="capacity" id="capacity" required min="1"
+                                <input type="number" name="capacity" id="capacity" required min="1" value="{{ old('capacity') }}"
                                     class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border py-2 px-3">
                             </div>
 
@@ -86,7 +95,7 @@
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <span class="text-gray-500 sm:text-sm">$</span>
                                     </div>
-                                    <input type="number" name="price" id="price" required min="0" step="0.01"
+                                    <input type="number" name="price" id="price" required min="0" step="0.01" value="{{ old('price') }}"
                                         class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full pl-7 shadow-sm sm:text-sm border-gray-300 rounded-md border py-2 px-3"
                                         placeholder="0.00">
                                 </div>
@@ -98,13 +107,15 @@
 
             <!-- Actions -->
             <div class="flex justify-end space-x-3">
-                <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <a href="/tents" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     Cancel
-                </button>
+                </a>
                 <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     Save Tent
                 </button>
             </div>
         </form>
     </div>
+
+
 </x-layout>

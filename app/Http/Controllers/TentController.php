@@ -24,7 +24,7 @@ class TentController extends Controller
             'type' => 'required|string|max:255',
             'capacity' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
         ]);
 
         if ($request->hasFile('image')) {
@@ -45,15 +45,15 @@ class TentController extends Controller
     public function update(Request $request, Tent $tent)
     {
         $messages = [
-            'image.uploaded' => 'The file size exceeds the server limit of 2MB.',
-            'image.max' => 'The image must not be greater than 2MB.',
+            'image.uploaded' => 'The file size exceeds the server limit of 10MB.',
+            'image.max' => 'The image must not be greater than 10MB.',
         ];
 
         $validated = $request->validate([
             'type' => 'required|string|max:255',
             'capacity' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
         ], $messages);
 
         if ($request->hasFile('image')) {
