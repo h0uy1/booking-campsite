@@ -1,121 +1,350 @@
 <x-layout>
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Add New Tent</h1>
-        <p class="mt-1 text-sm text-gray-500">Add a new type of tent to the campsite inventory.</p>
-    </div>
+    <div class="bg-gray-50 min-h-screen py-12">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">Add New Tent</h1>
+                <p class="mt-2 text-lg text-gray-500">Expand your inventory with a new tent listing.</p>
+            </div>
 
-    <div class="max-w-3xl mx-auto">
-        @if (session('success'))
-            <div class="mb-4 rounded-md bg-green-50 p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-green-800">
-                            {{ session('success') }}
-                        </p>
+            @if (session('success'))
+                <div class="mb-6 rounded-md bg-green-50 p-4 shadow-sm border border-green-100">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-green-800">
+                                {{ session('success') }}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        @endif
+            @endif
 
-        <form action="/tents" method="POST" class="space-y-6" enctype="multipart/form-data">
-            @csrf
+            @if ($errors->any())
+                <div class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-bold text-red-800">There were errors with your submission</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
             
-            <!-- Tent Details -->
-            <div class="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-medium text-gray-900 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                        Tent Configuration
-                    </h3>
-                </div>
+            <form action="/tents" method="POST" class="space-y-8" enctype="multipart/form-data">
+                @csrf
                 
-                <div class="p-6 space-y-6">
-                    <div class="grid grid-cols-1 gap-6">
-                        <!-- Image Upload -->
-                        <div>
-                            <label for="image" class="block text-sm font-medium text-gray-700">Tent Image</label>
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-green-500 transition-colors">
-                                <div class="space-y-1 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                    <div class="flex text-sm text-gray-600">
-                                        <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500">
-                                            <span>Upload a file</span>
-                                            <input id="image" name="image" type="file" class="sr-only">
-                                        </label>
-                                        <p class="pl-1">or drag and drop</p>
+                <!-- Tent Details Card -->
+                <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+                    <div class="px-8 py-6 border-b border-gray-100 bg-gray-50/50">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <div class="bg-green-100 p-2 rounded-lg">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                            </div>
+                            Tent Configuration
+                        </h3>
+                    </div>
+                    
+                    <div class="p-8 space-y-8">
+                        <div class="grid grid-cols-1 gap-8">
+                            <!-- Image Upload -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Tent Images</label>
+                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-green-500 hover:bg-green-50/30 transition-all duration-200 group cursor-pointer relative">
+                                    <div class="space-y-1 text-center pointer-events-none">
+                                        <svg class="mx-auto h-12 w-12 text-gray-400 group-hover:text-green-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        <div class="flex text-sm text-gray-600 justify-center">
+                                            <span class="relative bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500">
+                                                <span>Upload files</span>
+                                            </span>
+                                            <p class="pl-1">or drag and drop</p>
+                                        </div>
+                                        <p class="text-xs text-gray-500">
+                                            PNG, JPG, GIF up to 5MB (Max 5 files)
+                                        </p>
                                     </div>
-                                    <p class="text-xs text-gray-500">
-                                        PNG, JPG, GIF up to 5MB
-                                    </p>
+                                    <input id="images" name="images[]" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple>
+                                </div>
+                                
+                                <div id="image-preview-container" class="mt-6 hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                    <!-- Previews will be injected here -->
+                                </div>
+                                
+                                @error('images')
+                                    @foreach($errors->get('images') as $message)
+                                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                    @endforeach
+                                @enderror
+                            </div>
+
+                            <!-- Basic Info Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Name -->
+                                <div>
+                                    <label for="name" class="block text-sm font-bold text-gray-700">Tent Name <span class="text-red-500">*</span></label>
+                                    <input type="text" name="name" id="name" required value="{{ old('name') }}"
+                                        class="mt-2 block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 py-3 px-4"
+                                        placeholder="e.g. Deluxe Safari Tent">
+                                </div>
+
+                                <!-- Max Capacity -->
+                                <div>
+                                    <label for="max_capacity" class="block text-sm font-bold text-gray-700">Max Capacity <span class="text-gray-400 font-normal">(People)</span> <span class="text-red-500">*</span></label>
+                                    <input type="number" name="max_capacity" id="max_capacity" required min="1" value="{{ old('max_capacity') }}"
+                                        class="mt-2 block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 py-3 px-4">
                                 </div>
                             </div>
-                            
-                            @error('image')
-                                @foreach($errors->get('image') as $message)
-                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                @endforeach
-                            @enderror
 
-                            <!-- Image Preview -->
-                            <div id="image-preview-container" class="mt-4 hidden">
-                                <p class="block text-sm font-medium text-gray-700 mb-2">Image Preview</p>
-                                <img id="image-preview" src="#" alt="Image Preview" class="h-48 w-full object-cover rounded-md border border-gray-300 shadow-sm">
-                            </div>
-                        </div>
-
-                        <!-- Type -->
-                        <div>
-                            <label for="type" class="block text-sm font-medium text-gray-700">Tent Type <span class="text-red-500">*</span></label>
-                            <input type="text" name="type" id="type" required value="{{ old('type') }}"
-                                class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border py-2 px-3"
-                                placeholder="e.g. Deluxe Safari Tent">
-                        </div>
-
-                        <!-- Capacity & Price -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="capacity" class="block text-sm font-medium text-gray-700">Capacity (People) <span class="text-red-500">*</span></label>
-                                <input type="number" name="capacity" id="capacity" required min="1" value="{{ old('capacity') }}"
-                                    class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border py-2 px-3">
+                            <!-- Pricing Configuration -->
+                            <div class="border-t border-gray-100 pt-6">
+                                <label for="pricing_type" class="block text-sm font-bold text-gray-700 mb-2">Pricing Structure <span class="text-red-500">*</span></label>
+                                <select id="pricing_type" name="pricing_type" required class="block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-lg border">
+                                    <option value="" selected>Select Pricing Type</option>
+                                    <option value="person" {{ old('pricing_type') == 'person' ? 'selected' : '' }}>Per Person (Adult/Child rates)</option>
+                                    <option value="base" {{ old('pricing_type') == 'base' ? 'selected' : '' }}>Base Price (Tiered by capacity)</option>
+                                </select>
                             </div>
 
-                            <div>
-                                <label for="price" class="block text-sm font-medium text-gray-700">Price per Night ($) <span class="text-red-500">*</span></label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 sm:text-sm">$</span>
+                            <!-- Base Price Fields -->
+                            <div id="base-price-fields" class="space-y-6 hidden bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wide">Capacity Tiers</h4>
+                                    <span class="text-xs text-gray-500">Define price based on number of occupants</span>
+                                </div>
+                                
+                                <div id="base-prices-container" class="space-y-4">
+                                    @php
+                                        $basePrices = old('base_prices', [['capacity' => '', 'price_weekday' => '', 'price_weekend' => '']]);
+                                    @endphp
+
+                                    @foreach($basePrices as $index => $price)
+                                        <div class="base-price-row bg-white border border-gray-200 p-5 rounded-xl relative shadow-sm transition-shadow hover:shadow-md">
+                                            <div class="absolute -left-3 top-4 bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">Tier {{ $index + 1 }}</div>
+                                            
+                                            @if($index > 0)
+                                            <button type="button" class="remove-tier-btn absolute top-2 right-2 text-red-400 hover:text-red-700 text-sm font-medium transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            </button>
+                                            @endif
+
+                                            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mt-2">
+                                                <!-- Capacity -->
+                                                <div class="md:col-span-4">
+                                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Capacity</label>
+                                                    <input type="number" name="base_prices[{{ $index }}][capacity]" min="1" value="{{ $price['capacity'] ?? '' }}"
+                                                        class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 @error('base_prices.'.$index.'.capacity') border-red-500 @enderror" placeholder="People">
+                                                    @error('base_prices.'.$index.'.capacity')
+                                                        <p class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</p>
+                                                    @else
+                                                        <p class="mt-1 text-xs text-gray-400">Max people for this price</p>
+                                                    @enderror
+                                                </div>
+
+                                                <!-- Prices -->
+                                                <div class="md:col-span-4">
+                                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Weekday ($)</label>
+                                                    <div class="relative rounded-md shadow-sm">
+                                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                            <span class="text-gray-500 sm:text-sm">$</span>
+                                                        </div>
+                                                        <input type="number" name="base_prices[{{ $index }}][price_weekday]" min="0" step="0.01" value="{{ $price['price_weekday'] ?? '' }}"
+                                                            class="block w-full pl-7 shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 @error('base_prices.'.$index.'.price_weekday') border-red-500 @enderror"
+                                                            placeholder="0.00">
+                                                    </div>
+                                                    @error('base_prices.'.$index.'.price_weekday')
+                                                        <p class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+
+                                                <div class="md:col-span-4">
+                                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Weekend ($)</label>
+                                                    <div class="relative rounded-md shadow-sm">
+                                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                            <span class="text-gray-500 sm:text-sm">$</span>
+                                                        </div>
+                                                        <input type="number" name="base_prices[{{ $index }}][price_weekend]" min="0" step="0.01" value="{{ $price['price_weekend'] ?? '' }}"
+                                                            class="block w-full pl-7 shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 @error('base_prices.'.$index.'.price_weekend') border-red-500 @enderror"
+                                                            placeholder="0.00">
+                                                    </div>
+                                                    @error('base_prices.'.$index.'.price_weekend')
+                                                        <p class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                
+                                <button type="button" id="add-tier-btn" class="w-full inline-flex items-center justify-center px-4 py-2 border-2 border-dashed border-green-300 text-sm font-bold rounded-lg text-green-700 bg-green-50 hover:bg-green-100 hover:border-green-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all">
+                                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                    Add Another Price Tier
+                                </button>
+                            </div>
+
+                            <!-- Person Price Fields -->
+                            <div id="person-price-fields" class="hidden bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Rates Per Person</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="adult_price" class="block text-sm font-medium text-gray-700">Adult Price</label>
+                                        <div class="relative mt-1 rounded-md shadow-sm">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="text-gray-500 sm:text-lg">$</span>
+                                            </div>
+                                            <input type="number" name="adult_price" id="adult_price" min="0" step="0.01" value="{{ old('adult_price') }}"
+                                                class="block w-full pl-8 py-3 shadow-sm sm:text-lg border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                placeholder="0.00">
+                                        </div>
                                     </div>
-                                    <input type="number" name="price" id="price" required min="0" step="0.01" value="{{ old('price') }}"
-                                        class="mt-1 focus:ring-green-500 focus:border-green-500 block w-full pl-7 shadow-sm sm:text-sm border-gray-300 rounded-md border py-2 px-3"
-                                        placeholder="0.00">
+
+                                    <div>
+                                        <label for="child_price" class="block text-sm font-medium text-gray-700">Child Price</label>
+                                        <div class="relative mt-1 rounded-md shadow-sm">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span class="text-gray-500 sm:text-lg">$</span>
+                                            </div>
+                                            <input type="number" name="child_price" id="child_price" min="0" step="0.01" value="{{ old('child_price') }}"
+                                                class="block w-full pl-8 py-3 shadow-sm sm:text-lg border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                placeholder="0.00">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Actions -->
-            <div class="flex justify-end space-x-3">
-                <a href="/tents" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    Cancel
-                </a>
-                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    Save Tent
-                </button>
-            </div>
-        </form>
+                <!-- Actions -->
+                <div class="flex justify-end space-x-4">
+                    <a href="/tents" class="bg-white py-3 px-6 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:-translate-y-0.5">
+                        Create Listing
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-
-
 </x-layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const pricingType = document.getElementById('pricing_type');
+        const basePriceFields = document.getElementById('base-price-fields');
+        const personPriceFields = document.getElementById('person-price-fields');
+        const basePricesContainer = document.getElementById('base-prices-container');
+        const addTierBtn = document.getElementById('add-tier-btn');
+        
+        // Person inputs (Adult, Child)
+        const personInputs = personPriceFields.querySelectorAll('input');
+
+        function toggleFields() {
+            const value = pricingType.value;
+            
+            // Hide both initially
+            basePriceFields.classList.add('hidden');
+            personPriceFields.classList.add('hidden');
+
+            // Select all current base inputs (including dynamically added ones)
+            const allBaseInputs = basePricesContainer.querySelectorAll('input');
+
+            if (value === 'base') {
+                basePriceFields.classList.remove('hidden');
+                allBaseInputs.forEach(input => input.required = true);
+                personInputs.forEach(input => input.required = false);
+            } else if (value === 'person') {
+                personPriceFields.classList.remove('hidden');
+                allBaseInputs.forEach(input => input.required = false);
+                personInputs.forEach(input => input.required = true);
+            } else {
+                allBaseInputs.forEach(input => input.required = false);
+                personInputs.forEach(input => input.required = false);
+            }
+        }
+
+        // Add Tier Logic
+        let tierCount = 1;
+        addTierBtn.addEventListener('click', function() {
+            const index = tierCount;
+            tierCount++;
+            
+            const newRow = document.createElement('div');
+            newRow.className = 'base-price-row bg-white border border-gray-200 p-5 rounded-xl relative shadow-sm transition-shadow hover:shadow-md mt-4';
+            newRow.innerHTML = `
+                <div class="absolute -left-3 top-4 bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">Tier ${tierCount}</div>
+                <button type="button" class="remove-tier-btn absolute top-2 right-2 text-red-400 hover:text-red-700 text-sm font-medium transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mt-2">
+                    <!-- Capacity -->
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Capacity</label>
+                        <input type="number" name="base_prices[${index}][capacity]" min="1" required
+                            class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" placeholder="People">
+                        <p class="mt-1 text-xs text-gray-400">Max people for this price</p>
+                    </div>
+
+                    <!-- Prices -->
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Weekday ($)</label>
+                        <div class="relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" name="base_prices[${index}][price_weekday]" min="0" step="0.01" required
+                                class="block w-full pl-7 shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Weekend ($)</label>
+                        <div class="relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" name="base_prices[${index}][price_weekend]" min="0" step="0.01" required
+                                class="block w-full pl-7 shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            basePricesContainer.appendChild(newRow);
+            
+            // Add remove event listener
+            newRow.querySelector('.remove-tier-btn').addEventListener('click', function() {
+                newRow.remove();
+                // Optional: re-index or adjust tier count logic if needed, but simplistic approach is fine for now
+            });
+        });
+
+        // Initial run
+        toggleFields();
+
+        // Change listener
+        pricingType.addEventListener('change', toggleFields);
+    });
+</script>

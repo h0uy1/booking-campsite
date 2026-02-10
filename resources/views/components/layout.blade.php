@@ -39,5 +39,13 @@
         {{ $slot }}
     </main>
 
+    <script>
+        // Global fix to disable scroll-to-increment on number inputs (Mac trackpad/Mouse wheel)
+        document.addEventListener('wheel', function(e) {
+            if (e.target.type === 'number' && document.activeElement === e.target) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
 </body>
 </html>

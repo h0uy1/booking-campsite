@@ -9,5 +9,14 @@ class Tent extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['type', 'capacity', 'price', 'image'];
+    protected $fillable = ['name', 'pricing_type', 'max_capacity', 'image'];
+
+    public function prices(){
+        return $this->hasMany(Price::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(TentImage::class);
+    }
 }

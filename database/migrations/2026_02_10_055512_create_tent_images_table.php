@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tents', function (Blueprint $table) {
+        Schema::create('tent_images', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->enum('pricing_type', ['person', 'base']);
-            $table->integer('max_capacity');
+            $table->foreignId('tent_id')->constrained()->onDelete('cascade');
+            $table->string('image_path');
             $table->timestamps();
-            $table->string("image")->nullable();
         });
     }
 
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tents');
+        Schema::dropIfExists('tent_images');
     }
 };
