@@ -19,4 +19,9 @@ class Tent extends Model
     {
         return $this->hasMany(TentImage::class);
     }
+
+    public function slots()
+    {
+        return $this->hasMany(Slot::class);
+    }
 }

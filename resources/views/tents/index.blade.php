@@ -140,14 +140,6 @@
                     </div>
                     <h3 class="text-lg font-medium text-gray-900">No tents available</h3>
                     <p class="mt-2 text-gray-500">Get started by adding your first tent to the inventory.</p>
-                     <div class="mt-6">
-                        <a href="/tents/create" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
-                            <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                            </svg>
-                            Add New Tent
-                        </a>
-                    </div>
                 </div>
             @endif
         </div>

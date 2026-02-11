@@ -28,6 +28,8 @@ class TentController extends Controller
             'pricing_type' => 'required|in:person,base',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
             'max_capacity' => 'required|integer|min:1',
+            'slots' => 'nullable|array',
+            'slots.*.tent_number' => 'nullable|string|max:255',
         ];
 
         // 2. Conditional Validation Rules
@@ -110,6 +112,17 @@ class TentController extends Controller
                     ]);
                 }
             }
+
+            // Create slots if provided
+            if ($request->has('slots')) {
+                foreach ($request->slots as $slotData) {
+                    if (!empty($slotData['tent_number'])) {
+                        $tent->slots()->create([
+                            'tent_number' => $slotData['tent_number'],
+                        ]);
+                    }
+                }
+            }
         });
 
         return redirect('/tents')->with('success', 'Tent and pricing configuration created successfully!');
@@ -127,6 +140,8 @@ class TentController extends Controller
             'pricing_type' => 'required|in:person,base',
             'max_capacity' => 'required|integer|min:1',
             'new_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240', // Validate new images
+            'slots' => 'nullable|array',
+            'slots.*.tent_number' => 'nullable|string|max:255',
         ];
 
         // 2. Conditional Validation Rules (Same as store)
@@ -216,6 +231,18 @@ class TentController extends Controller
                         'adult_price' => 0, 
                         'child_price' => 0, 
                     ]);
+                }
+            }
+
+            // Update slots - delete all and recreate
+            $tent->slots()->delete();
+            if ($request->has('slots')) {
+                foreach ($request->slots as $slotData) {
+                    if (!empty($slotData['tent_number'])) {
+                        $tent->slots()->create([
+                            'tent_number' => $slotData['tent_number'],
+                        ]);
+                    }
                 }
             }
         });

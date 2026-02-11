@@ -51,6 +51,7 @@
                 
                 <!-- Tent Details Card -->
                 <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+                    
                     <div class="px-8 py-6 border-b border-gray-100 bg-gray-50/50">
                         <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
                             <div class="bg-green-100 p-2 rounded-lg">
@@ -231,10 +232,65 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
 
-                <!-- Actions -->
-                <div class="flex justify-end space-x-4">
+                <!-- Tent Slots Card -->
+                <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+                    <div class="px-8 py-6 border-b border-gray-100 bg-gray-50/50">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <div class="bg-blue-100 p-2 rounded-lg">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                                </svg>
+                            </div>
+                            Tent Slots
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Define individual tent slots with unique identifiers</p>
+                    </div>
+                    
+                    <div class="p-8 space-y-6">
+                        <div id="slots-container" class="space-y-4">
+                            @php
+                                $slots = old('slots', [['tent_number' => '']]);
+                            @endphp
+
+                            @foreach($slots as $index => $slot)
+                                <div class="slot-row bg-gray-50 border border-gray-200 p-5 rounded-xl relative shadow-sm transition-shadow hover:shadow-md">
+                                    <div class="absolute -left-3 top-4 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">Slot {{ $index + 1 }}</div>
+                                    
+                                    @if($index > 0)
+                                    <button type="button" class="remove-slot-btn absolute top-2 right-2 text-red-400 hover:text-red-700 text-sm font-medium transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                    @endif
+
+                                    <div class="grid grid-cols-1 gap-4 mt-2">
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tent Number / Identifier</label>
+                                            <input type="text" name="slots[{{ $index }}][tent_number]" value="{{ $slot['tent_number'] ?? '' }}"
+                                                class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 @error('slots.'.$index.'.tent_number') border-red-500 @enderror" 
+                                                placeholder="e.g., A1, B2, Tent-001">
+                                            @error('slots.'.$index.'.tent_number')
+                                                <p class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</p>
+                                            @else
+                                                <p class="mt-1 text-xs text-gray-400">Unique identifier for this tent slot</p>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        
+                        <button type="button" id="add-slot-btn" class="w-full inline-flex items-center justify-center px-4 py-2 border-2 border-dashed border-blue-300 text-sm font-bold rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
+                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            Add Another Slot
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Actions Bar -->
+                <div class="flex items-center justify-end pb-8 space-x-4">
                     <a href="/tents" class="bg-white py-3 px-6 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                         Cancel
                     </a>
@@ -249,6 +305,30 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Image Preview
+        const imagesInput = document.getElementById('images');
+        if (imagesInput) {
+            imagesInput.addEventListener('change', function(event) {
+                const container = document.getElementById('image-preview-container');
+                container.innerHTML = '';
+                container.classList.add('hidden');
+                
+                if (this.files && this.files.length > 0) {
+                    container.classList.remove('hidden');
+                    Array.from(this.files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.className = 'h-32 w-full object-cover rounded-lg border border-gray-200 shadow-sm';
+                            container.appendChild(img);
+                        }
+                        reader.readAsDataURL(file);
+                    });
+                }
+            });
+        }
+
         const pricingType = document.getElementById('pricing_type');
         const basePriceFields = document.getElementById('base-price-fields');
         const personPriceFields = document.getElementById('person-price-fields');
@@ -346,5 +426,48 @@
 
         // Change listener
         pricingType.addEventListener('change', toggleFields);
+
+        // Slot Management
+        const slotsContainer = document.getElementById('slots-container');
+        const addSlotBtn = document.getElementById('add-slot-btn');
+        let slotCount = 1;
+
+        addSlotBtn.addEventListener('click', function() {
+            const index = slotCount;
+            slotCount++;
+            
+            const newSlot = document.createElement('div');
+            newSlot.className = 'slot-row bg-gray-50 border border-gray-200 p-5 rounded-xl relative shadow-sm transition-shadow hover:shadow-md mt-4';
+            newSlot.innerHTML = `
+                <div class="absolute -left-3 top-4 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">Slot ${slotCount}</div>
+                <button type="button" class="remove-slot-btn absolute top-2 right-2 text-red-400 hover:text-red-700 text-sm font-medium transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+                
+                <div class="grid grid-cols-1 gap-4 mt-2">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tent Number / Identifier</label>
+                        <input type="text" name="slots[${index}][tent_number]"
+                            class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
+                            placeholder="e.g., A1, B2, Tent-001">
+                        <p class="mt-1 text-xs text-gray-400">Unique identifier for this tent slot</p>
+                    </div>
+                </div>
+            `;
+            
+            slotsContainer.appendChild(newSlot);
+            
+            // Add remove event listener
+            newSlot.querySelector('.remove-slot-btn').addEventListener('click', function() {
+                newSlot.remove();
+            });
+        });
+
+        // Add remove handlers for server-rendered slot rows
+        document.querySelectorAll('.remove-slot-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('.slot-row').remove();
+            });
+        });
     });
 </script>
