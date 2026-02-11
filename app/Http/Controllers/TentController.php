@@ -264,4 +264,6 @@ class TentController extends Controller
         $tent->delete();
         return redirect('/tents')->with('success', 'Tent deleted successfully!');
     }
+
+   
 }

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TentController;
+use App\Http\Controllers\BookingController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -24,6 +25,7 @@ Route::get('/tents', [TentController::class, 'index']);
 Route::get('/tents/{tent}/edit', [TentController::class, 'edit']);
 Route::post('/tents/{tent}/update', [TentController::class, 'update']);
 Route::post('/tents/{tent}/delete', [TentController::class, 'destroy']);
-Route::get('/phpinfo', function () {
-    phpinfo();
-});
+
+
+Route::get('/user',[BookingController::class,'user']);
+
