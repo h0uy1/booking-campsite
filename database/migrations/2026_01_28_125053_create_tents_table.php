@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->enum('pricing_type', ['person', 'base']);
             $table->integer('max_capacity');
+            $table->integer('min_capacity');
             $table->timestamps();
             $table->string("image")->nullable();
         });

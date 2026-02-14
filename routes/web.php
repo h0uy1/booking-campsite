@@ -5,7 +5,13 @@ use App\Http\Controllers\TentController;
 use App\Http\Controllers\BookingController;
 
 Route::get('/', function () {
-    return view('welcome');
+    $stats = [
+        'total_tents' => \App\Models\Tent::count(),
+        'total_slots' => \App\Models\Slot::count(),
+        'recent_tents' => \App\Models\Tent::latest()->take(3)->get(),
+        'recent_bookings' => \App\Models\Booking::with('slot.tent')->latest()->take(5)->get(),
+    ];
+    return view('welcome', compact('stats'));
 });
 Route::get('/booking', function(){
     return view('booking');
@@ -27,5 +33,8 @@ Route::post('/tents/{tent}/update', [TentController::class, 'update']);
 Route::post('/tents/{tent}/delete', [TentController::class, 'destroy']);
 
 
-Route::get('/user',[BookingController::class,'user']);
+Route::get('/user',[BookingController::class,'user'])->name('booking.index');
+Route::post('/user',[BookingController::class,'checkAvailability'])->name('booking.checkAvailability');
+Route::post('/checkout',[BookingController::class,'checkout'])->name('booking.checkout');
+Route::get('/booking/{id}', [BookingController::class, 'show'])->name('booking.show');
 

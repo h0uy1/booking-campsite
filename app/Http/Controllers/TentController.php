@@ -28,6 +28,8 @@ class TentController extends Controller
             'pricing_type' => 'required|in:person,base',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
             'max_capacity' => 'required|integer|min:1',
+            'min_capacity' => 'required|integer|min:1',
+            'child_price' => 'nullable|numeric|min:0',
             'slots' => 'nullable|array',
             'slots.*.tent_number' => 'nullable|string|max:255',
         ];
@@ -37,6 +39,7 @@ class TentController extends Controller
             $rules['adult_price'] = 'required|numeric|min:0';
             $rules['child_price'] = 'required|numeric|min:0';
         } else { // base
+            $rules['child_price'] = 'nullable|numeric|min:0';
             $rules['base_prices'] = [
                 'required',
                 'array',
@@ -76,6 +79,7 @@ class TentController extends Controller
                 'name' => $validated['name'],
                 'pricing_type' => $validated['pricing_type'],
                 'max_capacity' => $validated['max_capacity'],
+                'min_capacity' => $validated['min_capacity'],
                 'image' => $mainImagePath, // Keep backward compatibility for now
             ]);
 
@@ -108,7 +112,7 @@ class TentController extends Controller
                         'price_weekend' => $priceData['price_weekend'],
                         'capacity' => $priceData['capacity'],
                         'adult_price' => 0, // Not applicable for base
-                        'child_price' => 0, // Not applicable for base
+                        'child_price' => $validated['child_price'] ?? 0,
                     ]);
                 }
             }
@@ -139,6 +143,8 @@ class TentController extends Controller
             'name' => 'required|string|max:255',
             'pricing_type' => 'required|in:person,base',
             'max_capacity' => 'required|integer|min:1',
+            'min_capacity' => 'required|integer|min:1',
+            'child_price' => 'nullable|numeric|min:0',
             'new_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240', // Validate new images
             'slots' => 'nullable|array',
             'slots.*.tent_number' => 'nullable|string|max:255',
@@ -149,6 +155,7 @@ class TentController extends Controller
             $rules['adult_price'] = 'required|numeric|min:0';
             $rules['child_price'] = 'required|numeric|min:0';
         } else { // base
+            $rules['child_price'] = 'nullable|numeric|min:0';
             $rules['base_prices'] = [
                 'required',
                 'array',
@@ -206,6 +213,7 @@ class TentController extends Controller
                 'name' => $validated['name'],
                 'pricing_type' => $validated['pricing_type'],
                 'max_capacity' => $validated['max_capacity'],
+                'min_capacity' => $validated['min_capacity'],
                 'image' => $mainImagePath,
             ]);
 
@@ -229,7 +237,7 @@ class TentController extends Controller
                         'price_weekend' => $priceData['price_weekend'],
                         'capacity' => $priceData['capacity'],
                         'adult_price' => 0, 
-                        'child_price' => 0, 
+                        'child_price' => $validated['child_price'] ?? 0, 
                     ]);
                 }
             }

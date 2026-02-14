@@ -119,7 +119,8 @@
                             </div>
 
                             <!-- Basic Info -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Basic Info -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
                                     <label for="name" class="block text-sm font-bold text-gray-700">Tent Name <span class="text-red-500">*</span></label>
                                     <input type="text" name="name" id="name" required value="{{ old('name', $tent->name) }}"
@@ -127,7 +128,13 @@
                                 </div>
 
                                 <div>
-                                    <label for="max_capacity" class="block text-sm font-bold text-gray-700">Max Capacity <span class="text-gray-400 font-normal">(People)</span> <span class="text-red-500">*</span></label>
+                                    <label for="min_capacity" class="block text-sm font-bold text-gray-700">Min Capacity <span class="text-red-500">*</span></label>
+                                    <input type="number" name="min_capacity" id="min_capacity" required min="1" value="{{ old('min_capacity', $tent->min_capacity) }}"
+                                        class="mt-2 block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 py-3 px-4">
+                                </div>
+
+                                <div>
+                                    <label for="max_capacity" class="block text-sm font-bold text-gray-700">Max Capacity <span class="text-red-500">*</span></label>
                                     <input type="number" name="max_capacity" id="max_capacity" required min="1" value="{{ old('max_capacity', $tent->max_capacity) }}"
                                         class="mt-2 block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 py-3 px-4">
                                 </div>
@@ -259,16 +266,18 @@
                                 </button>
                             </div>
 
-                            <!-- Person Price Fields -->
-                            <div id="person-price-fields" class="{{ old('pricing_type', $tent->pricing_type) == 'person' ? '' : 'hidden' }} bg-gray-50 rounded-xl p-6 border border-gray-200">
-                                <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Rates Per Person</h4>
+                            <!-- Rates Per-Person / Surcharge Fields -->
+                            <div id="additional-rates-fields" class="{{ old('pricing_type', $tent->pricing_type) == 'person' || old('pricing_type', $tent->pricing_type) == 'base' ? '' : 'hidden' }} bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <h4 id="rates-title" class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">
+                                    {{ old('pricing_type', $tent->pricing_type) == 'base' ? 'Optional Surcharges' : 'Rates Per Person' }}
+                                </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     @php
                                         $firstPrice = $tent->prices->first();
                                         $adultPrice = $tent->pricing_type == 'person' && $firstPrice ? $firstPrice->adult_price : '';
-                                        $childPrice = $tent->pricing_type == 'person' && $firstPrice ? $firstPrice->child_price : '';
+                                        $childPrice = $firstPrice ? $firstPrice->child_price : '';
                                     @endphp
-                                    <div>
+                                    <div id="adult-price-container" class="{{ old('pricing_type', $tent->pricing_type) == 'base' ? 'hidden' : '' }}">
                                         <label for="adult_price" class="block text-sm font-medium text-gray-700">Adult Price</label>
                                         <div class="relative mt-1 rounded-md shadow-sm">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -280,8 +289,10 @@
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label for="child_price" class="block text-sm font-medium text-gray-700">Child Price</label>
+                                    <div id="child-price-container">
+                                        <label for="child_price" class="block text-sm font-medium text-gray-700">Child Price <span class="pricing-context-label text-xs font-normal text-gray-400">
+                                            {{ old('pricing_type', $tent->pricing_type) == 'base' ? '(Optional surcharge per child/night)' : '(Required)' }}
+                                        </span></label>
                                         <div class="relative mt-1 rounded-md shadow-sm">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <span class="text-gray-500 sm:text-lg">$</span>
@@ -399,6 +410,21 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Declare all variables at the top
+        const pricingType = document.getElementById('pricing_type');
+        const basePriceFields = document.getElementById('base-price-fields');
+        const basePricesContainer = document.getElementById('base-prices-container');
+        const addTierBtn = document.getElementById('add-tier-btn');
+        const additionalRatesFields = document.getElementById('additional-rates-fields');
+        const adultPriceContainer = document.getElementById('adult-price-container');
+        const childPriceContainer = document.getElementById('child-price-container');
+        const ratesTitle = document.getElementById('rates-title');
+        const pricingContextLabel = childPriceContainer.querySelector('.pricing-context-label');
+        
+        // Inputs
+        const adultInput = document.getElementById('adult_price');
+        const childInput = document.getElementById('child_price');
+
         // Image Previews
         const newImagesInput = document.getElementById('new_images');
         if (newImagesInput) {
@@ -423,46 +449,63 @@
             });
         }
 
-        const pricingType = document.getElementById('pricing_type');
-        const basePriceFields = document.getElementById('base-price-fields');
-        const personPriceFields = document.getElementById('person-price-fields');
-        const basePricesContainer = document.getElementById('base-prices-container');
-        const addTierBtn = document.getElementById('add-tier-btn');
-        
-        // Person inputs (Adult, Child)
-        const personInputs = personPriceFields.querySelectorAll('input');
-
         function toggleFields() {
             const value = pricingType.value;
             
-            // Hide both initially
+            // Hide both main containers initially
             basePriceFields.classList.add('hidden');
-            personPriceFields.classList.add('hidden');
+            additionalRatesFields.classList.add('hidden');
 
             // Select all current base inputs
             const allBaseInputs = basePricesContainer.querySelectorAll('input');
 
             if (value === 'base') {
                 basePriceFields.classList.remove('hidden');
-                allBaseInputs.forEach(input => input.required = true);
-                personInputs.forEach(input => input.required = false);
+                additionalRatesFields.classList.remove('hidden');
+                
+                // For base, adult price doesn't exist/matter, but child surcharge might
+                adultPriceContainer.classList.add('hidden');
+                ratesTitle.textContent = 'Optional Surcharges';
+                pricingContextLabel.textContent = '(Optional surcharge per child/night)';
+                
+                allBaseInputs.forEach(input => {
+                    input.required = true;
+                    input.disabled = false;
+                });
+                adultInput.required = false;
+                childInput.required = false;
             } else if (value === 'person') {
-                personPriceFields.classList.remove('hidden');
-                allBaseInputs.forEach(input => input.required = false);
-                personInputs.forEach(input => input.required = true);
+                additionalRatesFields.classList.remove('hidden');
+                
+                // For person, both are required
+                adultPriceContainer.classList.remove('hidden');
+                ratesTitle.textContent = 'Rates Per Person';
+                pricingContextLabel.textContent = '(Required)';
+                
+                // CRITICAL: Disable base price inputs when hidden to prevent validation errors
+                allBaseInputs.forEach(input => {
+                    input.required = false;
+                    input.disabled = true;
+                });
+                adultInput.required = true;
+                childInput.required = true;
             } else {
-                allBaseInputs.forEach(input => input.required = false);
-                personInputs.forEach(input => input.required = false);
+                allBaseInputs.forEach(input => {
+                    input.required = false;
+                    input.disabled = true;
+                });
+                adultInput.required = false;
+                childInput.required = false;
             }
         }
 
-        // Add Tier Logic
         // Calculate initial tier count based on existing rows
         let tierCount = basePricesContainer.querySelectorAll('.base-price-row').length || 1;
         if (tierCount === 0) tierCount = 1; // Safety fallback
 
+        // Add Tier Logic
         addTierBtn.addEventListener('click', function() {
-            const index = tierCount; // Use current count as index (simplified)
+            const index = tierCount; // Use current count as index
             tierCount++;
             
             const newRow = document.createElement('div');

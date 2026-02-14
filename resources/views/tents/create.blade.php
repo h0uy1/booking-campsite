@@ -98,13 +98,20 @@
                             </div>
 
                             <!-- Basic Info Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <!-- Name -->
                                 <div>
                                     <label for="name" class="block text-sm font-bold text-gray-700">Tent Name <span class="text-red-500">*</span></label>
                                     <input type="text" name="name" id="name" required value="{{ old('name') }}"
                                         class="mt-2 block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 py-3 px-4"
                                         placeholder="e.g. Deluxe Safari Tent">
+                                </div>
+
+                                <!-- Min Capacity -->
+                                <div>
+                                    <label for="min_capacity" class="block text-sm font-bold text-gray-700">Min Capacity <span class="text-red-500">*</span></label>
+                                    <input type="number" name="min_capacity" id="min_capacity" required min="1" value="{{ old('min_capacity', 1) }}"
+                                        class="mt-2 block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 py-3 px-4">
                                 </div>
 
                                 <!-- Max Capacity -->
@@ -201,11 +208,11 @@
                                 </button>
                             </div>
 
-                            <!-- Person Price Fields -->
-                            <div id="person-price-fields" class="hidden bg-gray-50 rounded-xl p-6 border border-gray-200">
-                                <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Rates Per Person</h4>
+                            <!-- Rates Per-Person / Surcharge Fields -->
+                            <div id="additional-rates-fields" class="hidden bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <h4 id="rates-title" class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Rates</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
+                                    <div id="adult-price-container">
                                         <label for="adult_price" class="block text-sm font-medium text-gray-700">Adult Price</label>
                                         <div class="relative mt-1 rounded-md shadow-sm">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -217,8 +224,8 @@
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label for="child_price" class="block text-sm font-medium text-gray-700">Child Price</label>
+                                    <div id="child-price-container">
+                                        <label for="child_price" class="block text-sm font-medium text-gray-700">Child Price <span class="pricing-context-label text-xs font-normal text-gray-400"></span></label>
                                         <div class="relative mt-1 rounded-md shadow-sm">
                                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <span class="text-gray-500 sm:text-lg">$</span>
@@ -305,6 +312,21 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Declare all variables at the top
+        const pricingType = document.getElementById('pricing_type');
+        const basePriceFields = document.getElementById('base-price-fields');
+        const basePricesContainer = document.getElementById('base-prices-container');
+        const addTierBtn = document.getElementById('add-tier-btn');
+        const additionalRatesFields = document.getElementById('additional-rates-fields');
+        const adultPriceContainer = document.getElementById('adult-price-container');
+        const childPriceContainer = document.getElementById('child-price-container');
+        const ratesTitle = document.getElementById('rates-title');
+        const pricingContextLabel = childPriceContainer.querySelector('.pricing-context-label');
+        
+        // Inputs
+        const adultInput = document.getElementById('adult_price');
+        const childInput = document.getElementById('child_price');
+
         // Image Preview
         const imagesInput = document.getElementById('images');
         if (imagesInput) {
@@ -329,41 +351,61 @@
             });
         }
 
-        const pricingType = document.getElementById('pricing_type');
-        const basePriceFields = document.getElementById('base-price-fields');
-        const personPriceFields = document.getElementById('person-price-fields');
-        const basePricesContainer = document.getElementById('base-prices-container');
-        const addTierBtn = document.getElementById('add-tier-btn');
-        
-        // Person inputs (Adult, Child)
-        const personInputs = personPriceFields.querySelectorAll('input');
-
         function toggleFields() {
             const value = pricingType.value;
             
-            // Hide both initially
+            // Hide both main containers initially
             basePriceFields.classList.add('hidden');
-            personPriceFields.classList.add('hidden');
+            additionalRatesFields.classList.add('hidden');
 
-            // Select all current base inputs (including dynamically added ones)
+            // Select all current base inputs
             const allBaseInputs = basePricesContainer.querySelectorAll('input');
 
             if (value === 'base') {
                 basePriceFields.classList.remove('hidden');
-                allBaseInputs.forEach(input => input.required = true);
-                personInputs.forEach(input => input.required = false);
+                additionalRatesFields.classList.remove('hidden');
+                
+                // For base, adult price doesn't exist/matter, but child surcharge might
+                adultPriceContainer.classList.add('hidden');
+                ratesTitle.textContent = 'Optional Surcharges';
+                pricingContextLabel.textContent = '(Optional surcharge per child/night)';
+                
+                allBaseInputs.forEach(input => {
+                    input.required = true;
+                    input.disabled = false;
+                });
+                adultInput.required = false;
+                childInput.required = false;
             } else if (value === 'person') {
-                personPriceFields.classList.remove('hidden');
-                allBaseInputs.forEach(input => input.required = false);
-                personInputs.forEach(input => input.required = true);
+                additionalRatesFields.classList.remove('hidden');
+                
+                // For person, both are required
+                adultPriceContainer.classList.remove('hidden');
+                ratesTitle.textContent = 'Rates Per Person';
+                pricingContextLabel.textContent = '(Required)';
+                
+                // CRITICAL: Disable base price inputs when hidden
+                allBaseInputs.forEach(input => {
+                    input.required = false;
+                    input.disabled = true;
+                });
+                adultInput.required = true;
+                childInput.required = true;
             } else {
-                allBaseInputs.forEach(input => input.required = false);
-                personInputs.forEach(input => input.required = false);
+                // No pricing type selected
+                allBaseInputs.forEach(input => {
+                    input.required = false;
+                    input.disabled = true;
+                });
+                adultInput.required = false;
+                childInput.required = false;
             }
         }
 
+        // Calculate initial tier count
+        let tierCount = basePricesContainer.querySelectorAll('.base-price-row').length || 1;
+
         // Add Tier Logic
-        let tierCount = 1;
         addTierBtn.addEventListener('click', function() {
             const index = tierCount;
             tierCount++;
@@ -417,7 +459,13 @@
             // Add remove event listener
             newRow.querySelector('.remove-tier-btn').addEventListener('click', function() {
                 newRow.remove();
-                // Optional: re-index or adjust tier count logic if needed, but simplistic approach is fine for now
+            });
+        });
+
+        // Add remove handlers for server-rendered tier rows
+        document.querySelectorAll('.remove-tier-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('.base-price-row').remove();
             });
         });
 
@@ -430,7 +478,7 @@
         // Slot Management
         const slotsContainer = document.getElementById('slots-container');
         const addSlotBtn = document.getElementById('add-slot-btn');
-        let slotCount = 1;
+        let slotCount = slotsContainer.querySelectorAll('.slot-row').length || 1;
 
         addSlotBtn.addEventListener('click', function() {
             const index = slotCount;
