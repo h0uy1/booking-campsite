@@ -12,7 +12,7 @@ Route::get('/', function () {
         'recent_bookings' => \App\Models\Booking::with('slot.tent')->latest()->take(5)->get(),
     ];
     return view('welcome', compact('stats'));
-});
+})->middleware(['auth']);
 Route::get('/booking', function(){
     return view('booking');
 });
