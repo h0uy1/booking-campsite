@@ -38,7 +38,8 @@ class TentController extends Controller
         if ($request->pricing_type === 'person') {
             $rules['adult_price'] = 'required|numeric|min:0';
             $rules['child_price'] = 'required|numeric|min:0';
-        } else { // base
+        } else {
+            // base
             $rules['child_price'] = 'nullable|numeric|min:0';
             $rules['base_prices'] = [
                 'required',
@@ -86,10 +87,9 @@ class TentController extends Controller
             // Save all images to tent_images table
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $index => $image) {
-                     
-                     $path = $image->store('tents', 'public');
-                     $tent->images()->create(['image_path' => $path]);
-                     if ($index === 0) {
+                    $path = $image->store('tents', 'public');
+                    $tent->images()->create(['image_path' => $path]);
+                    if ($index === 0) {
                         $tent->update(['image' => $path]);
                     }
                 }
@@ -100,7 +100,7 @@ class TentController extends Controller
                 $tent->prices()->create([
                     'price_weekday' => 0,
                     'price_weekend' => 0,
-                    'capacity' => 0, 
+                    'capacity' => 0,
                     'adult_price' => $validated['adult_price'],
                     'child_price' => $validated['child_price'],
                 ]);
@@ -154,7 +154,8 @@ class TentController extends Controller
         if ($request->pricing_type === 'person') {
             $rules['adult_price'] = 'required|numeric|min:0';
             $rules['child_price'] = 'required|numeric|min:0';
-        } else { // base
+        } else {
+            // base
             $rules['child_price'] = 'nullable|numeric|min:0';
             $rules['base_prices'] = [
                 'required',
@@ -180,6 +181,7 @@ class TentController extends Controller
             ];
             $rules['base_prices.*.price_weekday'] = 'required|numeric|min:0';
             $rules['base_prices.*.price_weekend'] = 'required|numeric|min:0';
+            $rules['base_prices.*.id'] = 'nullable|integer|exists:prices,id';
         }
 
         $validated = $request->validate($rules);
@@ -203,9 +205,7 @@ class TentController extends Controller
                     $tent->images()->create(['image_path' => $path]);
                 }
             }
-            
-            // Refresh main image if needed (e.g. if main image was deleted, pick next available, or if new image uploaded and no image existed)
-            // For simplicity, let's ensure the 'image' column in 'tents' table points to the first image in 'tent_images'
+
             $firstImage = $tent->images()->first();
             $mainImagePath = $firstImage ? $firstImage->image_path : null;
 
@@ -217,39 +217,52 @@ class TentController extends Controller
                 'image' => $mainImagePath,
             ]);
 
-            // Clear existing prices
-            $tent->prices()->delete();
-
             // Re-create prices based on type
             if ($validated['pricing_type'] === 'person') {
-                $tent->prices()->create([
-                    'price_weekday' => 0,
-                    'price_weekend' => 0,
-                    'capacity' => 0, 
-                    'adult_price' => $validated['adult_price'],
-                    'child_price' => $validated['child_price'],
-                ]);
-            } else {
-                // Loop through base prices
-                foreach ($validated['base_prices'] as $priceData) {
-                    $tent->prices()->create([
-                        'price_weekday' => $priceData['price_weekday'],
-                        'price_weekend' => $priceData['price_weekend'],
-                        'capacity' => $priceData['capacity'],
-                        'adult_price' => 0, 
-                        'child_price' => $validated['child_price'] ?? 0, 
+                $oneTent = $tent->prices()->first();
+                if ($oneTent) {
+                    $oneTent->update([
+                        'price_weekday' => 0,
+                        'price_weekend' => 0,
+                        'capacity' => 0,
+                        'adult_price' => $validated['adult_price'],
+                        'child_price' => $validated['child_price'],
                     ]);
+                }
+            } else {
+                foreach ($validated['base_prices'] as $priceData) {
+                    $price = $tent->prices()->find($priceData['id']); // ✅ use find() not get()
+                    if ($price) {
+                        $price->update([
+                            'price_weekday' => $priceData['price_weekday'],
+                            'price_weekend' => $priceData['price_weekend'],
+                            'capacity' => $priceData['capacity'],
+                            'child_price' => $validated['child_price'] ?? 0,
+                        ]);
+                    } else {
+                        $tent->prices()->create([
+                            'price_weekday' => $priceData['price_weekday'],
+                            'price_weekend' => $priceData['price_weekend'],
+                            'capacity' => $priceData['capacity'],
+                            'adult_price' => 0,
+                            'child_price' => $validated['child_price'] ?? 0,
+                        ]);
+                    }
                 }
             }
 
-            // Update slots - delete all and recreate
-            $tent->slots()->delete();
+            // Update slots
+            $oldSlots = $tent->slots()->get();
+
             if ($request->has('slots')) {
-                foreach ($request->slots as $slotData) {
+                foreach ($request->slots as $index => $slotData) {
                     if (!empty($slotData['tent_number'])) {
-                        $tent->slots()->create([
-                            'tent_number' => $slotData['tent_number'],
-                        ]);
+                        $oldSlot = $oldSlots->get($index);
+                        if ($oldSlot) {
+                            $oldSlot->update([
+                                'tent_number' => $slotData['tent_number'],
+                            ]);
+                        }
                     }
                 }
             }
@@ -258,12 +271,13 @@ class TentController extends Controller
         return redirect('/tents')->with('success', 'Tent updated successfully!');
     }
 
-    public function destroy(Tent $tent){
+    public function destroy(Tent $tent)
+    {
         // Delete all associated gallery images from storage
         foreach ($tent->images as $image) {
             Storage::disk('public')->delete($image->image_path);
         }
-        
+
         // Delete legacy/cover image if it exists
         if ($tent->image) {
             Storage::disk('public')->delete($tent->image);
@@ -272,6 +286,4 @@ class TentController extends Controller
         $tent->delete();
         return redirect('/tents')->with('success', 'Tent deleted successfully!');
     }
-
-   
 }
