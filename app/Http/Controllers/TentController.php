@@ -12,12 +12,12 @@ class TentController extends Controller
     public function index()
     {
         $tents = Tent::with('prices')->get();
-        return view('tents.index', compact('tents'));
+        return view('admin.tents.index', compact('tents'));
     }
 
     public function create()
     {
-        return view('tents.create');
+        return view('admin.tents.create');
     }
 
     public function store(Request $request)
@@ -129,12 +129,12 @@ class TentController extends Controller
             }
         });
 
-        return redirect('/tents')->with('success', 'Tent and pricing configuration created successfully!');
+        return redirect('/admin/tents')->with('success', 'Tent and pricing configuration created successfully!');
     }
 
     public function edit(Tent $tent)
     {
-        return view('tents.edit', compact('tent'));
+        return view('admin.tents.edit', compact('tent'));
     }
 
     public function update(Request $request, Tent $tent)
@@ -268,7 +268,7 @@ class TentController extends Controller
             }
         });
 
-        return redirect('/tents')->with('success', 'Tent updated successfully!');
+        return redirect('/admin/tents')->with('success', 'Tent updated successfully!');
     }
 
     public function destroy(Tent $tent)
@@ -284,6 +284,6 @@ class TentController extends Controller
         }
 
         $tent->delete();
-        return redirect('/tents')->with('success', 'Tent deleted successfully!');
+        return redirect('/admin/tents')->with('success', 'Tent deleted successfully!');
     }
 }

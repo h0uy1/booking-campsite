@@ -22,12 +22,13 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
-                    CampManager
+                    CampExplore
                 </span>
                 <div class="hidden md:flex ml-10 space-x-8">
-                    <a href="/" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Dashboard</a>
-                    <a href="/user" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Bookings</a>
-                    <a href="/tents" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Campsites</a>
+                    <a href="/user" class="border-transparent text-gray-500 hover:text-green-700 hover:border-green-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">Find a Campsite</a>
+                    @auth
+                        <a href="/all" class="border-transparent text-gray-500 hover:text-green-700 hover:border-green-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">My Bookings</a>
+                    @endauth
                 </div>
             </div>
 

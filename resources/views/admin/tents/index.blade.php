@@ -1,4 +1,4 @@
-<x-layout>
+<x-admin>
     <div class="bg-gray-50 min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="text-center mb-12">
@@ -9,7 +9,7 @@
                     Discover our range of luxury tents designed for comfort and adventure.
                 </p>
                 <div class="mt-8">
-                    <a href="/tents/create" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                    <a href="/admin/tents/create" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
                         <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                         </svg>
@@ -116,10 +116,10 @@
                             </div>
                             
                             <div class="mt-6 flex items-center justify-between gap-3">
-                                <a href="/tents/{{ $tent->id }}/edit" class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                                <a href="/admin/tents/{{ $tent->id }}/edit" class="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                                     Edit
                                 </a>
-                                <form action="/tents/{{ $tent->id }}/delete" method="POST" class="flex-1 inline-block" onsubmit="return confirm('Are you sure you want to delete this tent? This action cannot be undone.');">
+                                <form action="/admin/tents/{{ $tent->id }}/delete" method="POST" class="flex-1 inline-block" onsubmit="return confirm('Are you sure you want to delete this tent? This action cannot be undone.');">
                                     @csrf
                                     <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
                                         Delete
@@ -144,4 +144,4 @@
             @endif
         </div>
     </div>
-</x-layout>
+</x-admin>

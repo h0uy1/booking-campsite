@@ -1,4 +1,4 @@
-<x-layout>
+<x-admin>
     <div class="bg-gray-50 min-h-screen py-12">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
@@ -46,7 +46,7 @@
                 </div>
             @endif
             
-            <form action="/tents" method="POST" class="space-y-8" enctype="multipart/form-data">
+            <form action="/admin/tents" method="POST" class="space-y-8" enctype="multipart/form-data">
                 @csrf
                 
                 <!-- Tent Details Card -->
@@ -298,7 +298,7 @@
 
                 <!-- Actions Bar -->
                 <div class="flex items-center justify-end pb-8 space-x-4">
-                    <a href="/tents" class="bg-white py-3 px-6 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                    <a href="/admin/tents" class="bg-white py-3 px-6 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                         Cancel
                     </a>
                     <button type="submit" class="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:-translate-y-0.5">
@@ -308,7 +308,7 @@
             </form>
         </div>
     </div>
-</x-layout>
+</x-admin>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

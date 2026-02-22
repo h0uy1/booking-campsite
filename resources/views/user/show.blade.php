@@ -329,6 +329,7 @@
                             <input type="hidden" name="slot_id" value="{{ $tent->slots->first()->id }}">
                             <input type="hidden" name="check_in_date" value="{{ $checkIn }}">
                             <input type="hidden" name="check_out_date" value="{{ $checkOut }}">
+                            <input type="hidden" name="total_price" value="{{ $totalPrice }}">
                             
                             <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-green-100 group/btn flex items-center justify-center mb-6">
                                 Reserve Now

@@ -1,4 +1,4 @@
-<x-layout>
+<x-admin>
     <div class="bg-gray-50 min-h-screen py-12">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
@@ -7,7 +7,7 @@
                 <p class="mt-2 text-lg text-gray-500">Update configuration and pricing for this tent.</p>
             </div>
 
-            <form method="POST" action="/tents/{{ $tent->id }}/update" class="space-y-8" enctype="multipart/form-data">
+            <form method="POST" action="/admin/tents/{{ $tent->id }}/update" class="space-y-8" enctype="multipart/form-data">
                 @csrf
 
                 @if ($errors->any())
@@ -542,7 +542,7 @@
                     </button>
 
                     <div class="flex space-x-4">
-                        <a href="/tents"
+                        <a href="/admin/tents"
                             class="bg-white py-3 px-6 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                             Cancel
                         </a>
@@ -555,12 +555,12 @@
             </form>
 
             <!-- Hidden Delete Form -->
-            <form id="delete-form" action="/tents/{{ $tent->id }}/delete" method="POST" class="hidden">
+            <form id="delete-form" action="/admin/tents/{{ $tent->id }}/delete" method="POST" class="hidden">
                 @csrf
             </form>
         </div>
     </div>
-</x-layout>
+</x-admin>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

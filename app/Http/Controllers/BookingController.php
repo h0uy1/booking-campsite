@@ -115,12 +115,136 @@ class BookingController extends Controller
             'slot_id' => 'required|exists:slots,id',
             'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
+            'total_price' => 'required|numeric|min:0',
         ]);
         $validated['status'] = 'confirmed';
+
+        if (auth()->check()) {
+            $validated['user_id'] = auth()->id();
+        }
 
         Booking::create($validated);
 
         return view('user.checkout');
     }
 
+    public function myBookings(Request $request)
+    {
+        if (!auth()->check()) {
+            return redirect('/login');
+        }
+
+        $query = Booking::with('slot.tent')
+            ->where('user_id', auth()->id());
+
+        // Search by Booking ID, User Name, or Campsite/Slot
+        if ($request->filled('search')) {
+            $search = $request->search;
+            // Extract numbers from #BK-123456 format if present
+            $searchId = preg_replace('/[^0-9]/', '', $search);
+
+            $query->where(function ($q) use ($search, $searchId) {
+                // If there's a numeric ID, search by Booking ID
+                if (!empty($searchId)) {
+                    $q->where('id', (int)$searchId);
+                }
+
+                // Search User Name / Email
+                $q->orWhereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', '%' . $search . '%')
+                              ->orWhere('email', 'like', '%' . $search . '%');
+                });
+
+                // Search Campsite Name or Slot Number
+                $q->orWhereHas('slot.tent', function ($tentQuery) use ($search) {
+                    $tentQuery->where('name', 'like', '%' . $search . '%');
+                })->orWhereHas('slot', function ($slotQuery) use ($search) {
+                    $slotQuery->where('tent_number', 'like', '%' . $search . '%');
+                });
+            });
+        }
+
+        // Filter by Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by Date (checks if date falls within the booking period)
+        if ($request->filled('date')) {
+            $date = $request->date;
+            $query->where(function ($q) use ($date) {
+                $q->where('check_in_date', '<=', $date)
+                  ->where('check_out_date', '>=', $date);
+            });
+        }
+
+        $bookings = $query->orderBy('created_at', 'desc')->get();
+
+        return view('all', compact('bookings'));
+    }
+
+    public function adminIndex(Request $request)
+    {
+        $query = Booking::with('user', 'slot.tent');
+
+        // Text Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $searchId = preg_replace('/[^0-9]/', '', $search);
+
+            $query->where(function ($q) use ($search, $searchId) {
+                if (!empty($searchId)) {
+                    $q->where('id', (int)$searchId);
+                }
+                $q->orWhereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', '%' . $search . '%')
+                              ->orWhere('email', 'like', '%' . $search . '%');
+                });
+                $q->orWhereHas('slot.tent', function ($tentQuery) use ($search) {
+                    $tentQuery->where('name', 'like', '%' . $search . '%');
+                })->orWhereHas('slot', function ($slotQuery) use ($search) {
+                    $slotQuery->where('tent_number', 'like', '%' . $search . '%');
+                });
+            });
+        }
+
+        // Status Filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Date Filter
+        if ($request->filled('date')) {
+            $date = $request->date;
+            $query->where(function ($q) use ($date) {
+                $q->where('check_in_date', '<=', $date)
+                  ->where('check_out_date', '>=', $date);
+            });
+        }
+
+        $bookings = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+        // High-level KPI Stats
+        $stats = [
+            'total' => Booking::count(),
+            'pending' => Booking::where('status', 'pending')->count(),
+            'confirmed' => Booking::where('status', 'confirmed')->count(),
+            'revenue_30d' => Booking::where('status', 'confirmed')
+                                    ->where('created_at', '>=', Carbon::now()->subDays(30))
+                                    ->sum('total_price'),
+        ];
+
+        return view('admin.bookings.index', compact('bookings', 'stats'));
+    }
+
+    public function adminUpdateStatus(Request $request, Booking $booking)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,confirmed,cancelled',
+        ]);
+
+        $booking->update(['status' => $validated['status']]);
+
+        return back()->with('success', 'Booking status updated to ' . ucfirst($validated['status']) . ' successfully.');
+    }
 }
