@@ -35,18 +35,16 @@
             <div class="absolute inset-0 bg-gradient-to-r from-gray-900/70 via-gray-900/30 to-transparent flex items-center px-12 py-12 md:py-0">
                 <div class="max-w-xl">
                     <h1 class="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
-                        Find Your Perfect <span class="text-green-400">Nature Getaway</span>
+                        Escape to <span class="text-green-400">Tam Durian Farm & Campsite</span>
                     </h1>
                     <p class="text-gray-100 text-base md:text-lg font-medium leading-relaxed">
-                        Horizontal booking view inspired by top travel platforms, tailored for your premium campsite adventure.
+                        Experience the perfect blend of agricultural charm and nature adventure in the heart of Jasin, Melaka.
                     </p>
                 </div>
             </div>
 
-            <!-- Responsive Search Bar (Desktop Position) -->
             <div class="hidden md:block absolute bottom-10 left-12 right-12 z-20">
-                <form id="search-form-desktop" action="{{ route('booking.checkAvailability') }}" method="POST" class="bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/20">
-                    @csrf
+                <form id="search-form-desktop" action="{{ route('booking.index') }}" method="GET" class="bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/20">
                     <div class="flex-1 px-6 py-3 border-r border-gray-100 flex flex-col justify-center">
                         <label for="check_in" class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Check-in</label>
                         <input type="date" id="check_in" name="check_in" value="{{ old('check_in', $currentDate) }}" 
@@ -81,8 +79,7 @@
 
         <!-- Responsive Search Bar (Mobile Position) -->
         <div class="md:hidden relative px-4 z-20">
-            <form id="search-form-mobile" action="{{ route('booking.checkAvailability') }}" method="POST" class="bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-xl flex flex-col gap-6 border border-gray-100">
-                @csrf
+            <form id="search-form-mobile" action="{{ route('booking.index') }}" method="GET" class="bg-white/95 backdrop-blur-md p-6 rounded-3xl shadow-xl flex flex-col gap-6 border border-gray-100">
                 <div class="flex flex-col gap-4">
                     <div class="flex-1 border-b border-gray-100 pb-4">
                         <label for="check_in_mobile" class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Check-in</label>
@@ -124,8 +121,14 @@
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-sm font-bold text-gray-400 uppercase tracking-widest">Sort By:</span>
-                <button class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 shadow-sm hover:border-green-500 transition-colors">Recommended</button>
-                <button class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 shadow-sm hover:border-green-500 transition-colors">Lowest Price</button>
+                <a href="{{ request()->fullUrlWithQuery(['sort' => 'recommended']) }}" 
+                   class="px-4 py-2 {{ $sort === 'recommended' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-200 hover:border-green-500' }} border rounded-xl text-sm font-bold shadow-sm transition-colors">
+                   Recommended
+                </a>
+                <a href="{{ request()->fullUrlWithQuery(['sort' => 'price_low']) }}" 
+                   class="px-4 py-2 {{ $sort === 'price_low' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-200 hover:border-green-500' }} border rounded-xl text-sm font-bold shadow-sm transition-colors">
+                   Lowest Price
+                </a>
             </div>
         </div>
 
@@ -135,14 +138,9 @@
         </div>
 
         
-        <!-- Pagination UI (Visual) -->
-        <div class="flex justify-center mt-12 gap-2">
-            <button class="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center font-bold text-green-600 shadow-sm border-2 border-green-500">1</button>
-            <button class="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center font-bold text-gray-400 shadow-sm hover:border-green-500 hover:text-green-600">2</button>
-            <button class="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center font-bold text-gray-400 shadow-sm hover:border-green-500 hover:text-green-600">3</button>
-            <button class="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center font-bold text-gray-400 shadow-sm hover:border-green-500 hover:text-green-600">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </button>
+        <!-- Pagination UI (Dynamic) -->
+        <div class="mt-12">
+            {{ $tents->links() }}
         </div>
     </div>
 </x-layout>

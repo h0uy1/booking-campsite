@@ -42,9 +42,9 @@ Route::middleware(['auth:admin'])->group(function () {
 
 
 Route::get('/user', [BookingController::class, 'user'])->name('booking.index');
-Route::post('/user', [BookingController::class, 'checkAvailability'])->name('booking.checkAvailability');
 Route::post('/checkout', [BookingController::class, 'checkout'])->name('booking.checkout');
 Route::get('/booking/{id}', [BookingController::class, 'show'])->name('booking.show');
+Route::get('/viewer-count/{id}', [BookingController::class, 'getViewerCount'])->name('booking.viewerCount');
 
 Route::get('/admin/login', function () {
     return view('admin.login');

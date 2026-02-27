@@ -46,22 +46,33 @@
 
                 <div class="flex items-center text-xs font-bold text-gray-400 mb-4">
                     <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    Pine Valley Forest, Cluster {{ chr(65 + ($loop->index % 26)) }} — <span class="text-blue-500 ml-1 hover:underline cursor-pointer">Show on map</span>
+                    Tam Durian Farm & Campsite <a href="https://www.google.com/maps/place/Tam+Durian+Farm+Campsite%26Cafe/@2.2722739,102.4085363,17z/data=!3m1!4b1!4m6!3m5!1s0x31d1e7a9574f33c1:0xa9fcd93fec35b57c!8m2!3d2.2722739!4d102.4111112!16s%2Fg%2F11rt_k1ck5" target="_blank" rel="noopener noreferrer" class="text-blue-500 ml-1 hover:underline cursor-pointer">Show on map</a>
                 </div>
 
-                <!-- Amenities (Compact List) -->
-                <div class="flex flex-wrap gap-x-4 gap-y-2 mb-4">
-                    <div class="flex items-center gap-1.5 border border-green-100 bg-green-50/30 px-2 py-1 rounded-lg">
-                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        <span class="text-[10px] font-bold text-gray-600">Free Breakfast</span>
+                <!-- Amenities (Sync with show page) -->
+                <div class="flex flex-wrap gap-x-3 gap-y-1.5 mb-4">
+                    <!-- Sleep -->
+                    <div class="flex items-center gap-1 border border-green-100 bg-green-50/30 px-2 py-0.5 rounded-lg">
+                        <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-[9px] font-bold text-gray-600 whitespace-nowrap">Tent & Bedding</span>
                     </div>
-                    <div class="flex items-center gap-1.5 border border-blue-100 bg-blue-50/30 px-2 py-1 rounded-lg">
-                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        <span class="text-[10px] font-bold text-gray-600">WiFi Included</span>
+                    <!-- Meals -->
+                    <div class="flex items-center gap-1 border border-blue-100 bg-blue-50/30 px-2 py-0.5 rounded-lg">
+                        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-[9px] font-bold text-gray-600 whitespace-nowrap">3 Meals (BBQ/Catering/Breakfast)</span>
                     </div>
-                    <div class="flex items-center gap-1.5 border border-gray-100 bg-gray-50/30 px-2 py-1 rounded-lg">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        <span class="text-[10px] font-bold text-gray-500 line-through">Non-Smoking</span>
+                    <div class="flex items-center gap-1 border border-blue-100 bg-blue-50/30 px-2 py-0.5 rounded-lg">
+                        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="text-[9px] font-bold text-blue-600 italic whitespace-nowrap">Limited Refills</span>
+                    </div>
+                    <!-- Facilities -->
+                    <div class="flex items-center gap-1 border border-orange-100 bg-orange-50/30 px-2 py-0.5 rounded-lg">
+                        <svg class="w-3 h-3 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-[9px] font-bold text-gray-600 whitespace-nowrap">Hot Shower</span>
+                    </div>
+                    <div class="flex items-center gap-1 border border-purple-100 bg-purple-50/30 px-2 py-0.5 rounded-lg">
+                        <svg class="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-[9px] font-bold text-gray-600 whitespace-nowrap">Ice Box & Water</span>
                     </div>
                 </div>
             </div>

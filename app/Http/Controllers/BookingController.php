@@ -5,16 +5,22 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Tent;
 use App\Models\Booking;
+use App\Models\Price;
+use App\Models\Slot;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class BookingController extends Controller
 {
     /**
      * Resolve date range for the index view: use provided dates or default to today/tomorrow.
      */
-    private function getDateRange(?string $checkIn = null, ?string $checkOut = null): array
+    private function getDateRange(Request $request): array
     {
+        $checkIn = $request->query('check_in') ?? $request->input('check_in');
+        $checkOut = $request->query('check_out') ?? $request->input('check_out');
+
         if ($checkIn && $checkOut) {
             return ['currentDate' => $checkIn, 'nextDate' => $checkOut];
         }
@@ -27,41 +33,54 @@ class BookingController extends Controller
     /**
      * Get tents available for the given check-in/check-out and minimum guests.
      */
-    private function getAvailableTents(string $checkIn, string $checkOut, int $guests, int $adults = null )
+    private function getAvailableTents(string $checkIn, string $checkOut, int $guests, int $adults = 0, string $sort = 'recommended')
     {
         $availabilityQuery = function ($query) use ($checkIn, $checkOut) {
             $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->where('check_in_date', '<', $checkOut)
-                    ->where('check_out_date', '>', $checkIn);
+                    ->where('check_out_date', '>', $checkIn)
+                    ->where('status', 'confirmed');
             });
         };
 
-        return Tent::with(['slots' => $availabilityQuery, 'prices', 'images'])
+        $query = Tent::with(['slots' => $availabilityQuery, 'prices', 'images'])
             ->whereHas('slots', $availabilityQuery)
             ->withCount(['slots' => $availabilityQuery])
             ->where('max_capacity', '>=', $guests)
-            ->where('min_capacity', '<=', $adults)
-            ->get();
+            ->where('min_capacity', '<=', $adults);
+
+        if ($sort === 'price_low') {
+            $query->addSelect([
+                'min_price' => Price::selectRaw('MIN(CASE WHEN tents.pricing_type = "person" THEN adult_price ELSE price_weekday END)')
+                    ->whereColumn('tent_id', 'tents.id')
+            ])->orderBy('min_price', 'asc');
+        } else {
+            // Default: Recommended (can be defined by ID or a specific column if available)
+            $query->orderBy('id', 'desc');
+        }
+
+        return $query;
     }
 
     public function user(Request $request)
     {
-        ['currentDate' => $currentDate, 'nextDate' => $nextDate] = $this->getDateRange();
-        $adults = (int) $request->query('adults', 2);
-        $children = (int) $request->query('children', 0);
+        ['currentDate' => $currentDate, 'nextDate' => $nextDate] = $this->getDateRange($request);
+        
+        $adults = (int) $request->input('adults', $request->query('adults', 2));
+        $children = (int) $request->input('children', $request->query('children', 0));
         $guests = $adults + $children;
+        $sort = $request->query('sort', 'recommended');
 
-        $tents = $this->getAvailableTents($currentDate, $nextDate, $guests, $adults);
+        $tents = $this->getAvailableTents($currentDate, $nextDate, $guests, $adults, $sort)
+                      ->paginate(2)
+                      ->withQueryString();
 
-        return view('user.index', compact('tents', 'currentDate', 'nextDate', 'adults', 'children'));
+        return view('user.index', compact('tents', 'currentDate', 'nextDate', 'adults', 'children', 'sort'));
     }
 
     public function show($id, Request $request)
     {
-        ['currentDate' => $checkIn, 'nextDate' => $checkOut] = $this->getDateRange(
-            $request->query('check_in'),
-            $request->query('check_out')
-        );
+        ['currentDate' => $checkIn, 'nextDate' => $checkOut] = $this->getDateRange($request);
 
         $availabilityQuery = function ($query) use ($checkIn, $checkOut) {
             $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
@@ -78,52 +97,90 @@ class BookingController extends Controller
         $children = (int) $request->query('children', 0);
         $guests = $adults + $children;
 
+        // Record current viewer
+        $this->trackViewer($id);
+
         return view('user.show', compact('tent', 'checkIn', 'checkOut', 'guests', 'adults', 'children'));
     }
 
-    public function checkAvailability(Request $request)
+    /**
+     * Track and return real-time viewer count for a tent.
+     */
+    private function trackViewer($tentId)
     {
-        $validated = $request->validate([
-            'check_in' => 'required|date|after_or_equal:today',
-            'check_out' => 'required|date|after:check_in',
-            'adults' => 'required|numeric|min:1',
-            'children' => 'required|numeric|min:0',
-        ]);
-
-        $totalGuests = (int)$validated['adults'] + (int)$validated['children'];
-
-        ['currentDate' => $currentDate, 'nextDate' => $nextDate] = $this->getDateRange(
-            $validated['check_in'],
-            $validated['check_out']
-        );
-
-        $tents = $this->getAvailableTents(
-            $validated['check_in'],
-            $validated['check_out'],
-            $totalGuests,
-            $validated['adults']
-        );
-
-        $adults = (int)$validated['adults'];
-        $children = (int)$validated['children'];
-
-        return view('user.index', compact('tents', 'currentDate', 'nextDate', 'adults', 'children'));
+        $cacheKey = "tent_viewers_{$tentId}";
+        $sessionId = session()->getId();
+        $viewers = Cache::get($cacheKey, []);
+        
+        // Add or update current viewer with current timestamp
+        $viewers[$sessionId] = now()->timestamp;
+        
+        // Remove viewers who haven't been active for more than 5 minutes
+        $viewers = array_filter($viewers, function($timestamp) {
+            return $timestamp > now()->subMinutes(5)->timestamp;
+        });
+        
+        Cache::put($cacheKey, $viewers, now()->addMinutes(10));
+        
+        return count($viewers);
     }
+
+    public function getViewerCount($id)
+    {
+        $cacheKey = "tent_viewers_{$id}";
+        $viewers = Cache::get($cacheKey, []);
+        
+        // Clean up expired (this helps keep it accurate when polled)
+        $viewers = array_filter($viewers, function($timestamp) {
+            return $timestamp > now()->subMinutes(5)->timestamp;
+        });
+        
+        return response()->json(['count' => count($viewers)]);
+    }
+
+    // checkAvailability method replaced by user method consolidation
 
     public function checkout(Request $request){
         $validated = $request->validate([
-            'slot_id' => 'required|exists:slots,id',
+            'tent_id' => 'required|exists:tents,id',
+            'room_count' => 'required|integer|min:1',
             'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
             'total_price' => 'required|numeric|min:0',
         ]);
-        $validated['status'] = 'confirmed';
 
-        if (auth()->check()) {
-            $validated['user_id'] = auth()->id();
+        $tentId = $validated['tent_id'];
+        $roomCount = $validated['room_count'];
+        $checkIn = $validated['check_in_date'];
+        $checkOut = $validated['check_out_date'];
+
+        // Find available slots for the given dates
+        $availableSlots = Slot::where('tent_id', $tentId)
+            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
+                $query->where('check_in_date', '<', $checkOut)
+                    ->where('check_out_date', '>', $checkIn)
+                    ->where('status', 'confirmed');
+            })
+            ->take($roomCount)
+            ->get();
+
+        if ($availableSlots->count() < $roomCount) {
+             return back()->with('error', 'Sorry, the requested number of units are no longer available for these dates.');
         }
 
-        Booking::create($validated);
+        $userId = auth()->id();
+        $unitPrice = $validated['total_price'] / $roomCount;
+
+        foreach ($availableSlots as $slot) {
+            Booking::create([
+                'user_id' => $userId,
+                'slot_id' => $slot->id,
+                'check_in_date' => $checkIn,
+                'check_out_date' => $checkOut,
+                'status' => 'confirmed',
+                'total_price' => $unitPrice,
+            ]);
+        }
 
         return view('user.checkout');
     }
@@ -223,6 +280,9 @@ class BookingController extends Controller
         }
 
         $bookings = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+        // Mark all bookings on the current page as seen
+        Booking::whereIn('id', $bookings->pluck('id'))->update(['is_seen' => true]);
 
         // High-level KPI Stats
         $stats = [
