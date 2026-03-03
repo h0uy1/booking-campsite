@@ -30,6 +30,7 @@ Route::middleware(['auth:admin'])->group(function () {
     })->name('admin.dashboard');
 
     Route::get('/admin/bookings', [BookingController::class, 'adminIndex'])->name('admin.bookings.index');
+    Route::get('/admin/bookings/occupancy', [BookingController::class, 'adminOccupancy'])->name('admin.bookings.occupancy');
     Route::patch('/admin/bookings/{booking}/status', [BookingController::class, 'adminUpdateStatus'])->name('admin.bookings.status');
 
     Route::get('/admin/tents/create', [TentController::class, 'create']);

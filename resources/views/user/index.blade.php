@@ -48,6 +48,7 @@
                     <div class="flex-1 px-6 py-3 border-r border-gray-100 flex flex-col justify-center">
                         <label for="check_in" class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Check-in</label>
                         <input type="date" id="check_in" name="check_in" value="{{ old('check_in', $currentDate) }}" 
+                               min="{{ date('Y-m-d') }}"
                                class="text-sm font-bold text-gray-900 bg-transparent border-none p-0 focus:ring-0 cursor-pointer w-full">
                     </div>
                     <div class="flex-1 px-6 py-3 border-r border-gray-100 flex flex-col justify-center">
@@ -84,6 +85,7 @@
                     <div class="flex-1 border-b border-gray-100 pb-4">
                         <label for="check_in_mobile" class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Check-in</label>
                         <input type="date" id="check_in_mobile" name="check_in"  value="{{ old('check_in', $currentDate) }}"  
+                               min="{{ date('Y-m-d') }}"
                                class="text-base font-bold text-gray-900 bg-transparent border-none p-0 focus:ring-0 cursor-pointer w-full">
                     </div>
                     <div class="flex-1 border-b border-gray-100 pb-4">
@@ -143,4 +145,36 @@
             {{ $tents->links() }}
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkInInput = document.getElementById('check_in');
+            const checkOutInput = document.getElementById('check_out');
+            const checkInMobile = document.getElementById('check_in_mobile');
+            const checkOutMobile = document.getElementById('check_out_mobile');
+
+            function handleCheckInChange(inInput, outInput) {
+                if (!inInput.value) return;
+                
+                let date = new Date(inInput.value);
+                date.setDate(date.getDate() + 1);
+                
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const nextDay = `${year}-${month}-${day}`;
+                
+                outInput.value = nextDay;
+                outInput.min = nextDay;
+            }
+
+            if (checkInInput && checkOutInput) {
+                checkInInput.addEventListener('change', () => handleCheckInChange(checkInInput, checkOutInput));
+            }
+            
+            if (checkInMobile && checkOutMobile) {
+                checkInMobile.addEventListener('change', () => handleCheckInChange(checkInMobile, checkOutMobile));
+            }
+        });
+    </script>
 </x-layout>

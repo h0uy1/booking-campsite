@@ -10,6 +10,7 @@ use App\Models\Slot;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
@@ -22,6 +23,11 @@ class BookingController extends Controller
         $checkOut = $request->query('check_out') ?? $request->input('check_out');
 
         if ($checkIn && $checkOut) {
+            $today = Carbon::today()->toDateString();
+            if ($checkIn < $today) {
+                $checkIn = $today;
+                $checkOut = Carbon::parse($checkIn)->addDay()->toDateString();
+            }
             return ['currentDate' => $checkIn, 'nextDate' => $checkOut];
         }
         return [
@@ -72,7 +78,7 @@ class BookingController extends Controller
         $sort = $request->query('sort', 'recommended');
 
         $tents = $this->getAvailableTents($currentDate, $nextDate, $guests, $adults, $sort)
-                      ->paginate(2)
+                      ->paginate(4)
                       ->withQueryString();
 
         return view('user.index', compact('tents', 'currentDate', 'nextDate', 'adults', 'children', 'sort'));
@@ -149,40 +155,43 @@ class BookingController extends Controller
             'total_price' => 'required|numeric|min:0',
         ]);
 
-        $tentId = $validated['tent_id'];
-        $roomCount = $validated['room_count'];
-        $checkIn = $validated['check_in_date'];
-        $checkOut = $validated['check_out_date'];
+        return DB::transaction(function () use ($validated) {
 
-        // Find available slots for the given dates
-        $availableSlots = Slot::where('tent_id', $tentId)
-            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                $query->where('check_in_date', '<', $checkOut)
-                    ->where('check_out_date', '>', $checkIn)
-                    ->where('status', 'confirmed');
-            })
-            ->take($roomCount)
-            ->get();
+            $tentId = $validated['tent_id'];
+            $roomCount = $validated['room_count'];
+            $checkIn = $validated['check_in_date'];
+            $checkOut = $validated['check_out_date'];
 
-        if ($availableSlots->count() < $roomCount) {
-             return back()->with('error', 'Sorry, the requested number of units are no longer available for these dates.');
-        }
+            $availableSlots = Slot::where('tent_id', $tentId)
+                ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
+                    $query->where('check_in_date', '<', $checkOut)
+                        ->where('check_out_date', '>', $checkIn)
+                        ->where('status', 'confirmed');
+                })
+                ->lockForUpdate()
+                ->take($roomCount)
+                ->get();
 
-        $userId = auth()->id();
-        $unitPrice = $validated['total_price'] / $roomCount;
+            if ($availableSlots->count() < $roomCount) {
+                throw new \Exception('Not enough slots available.');
+            }
 
-        foreach ($availableSlots as $slot) {
-            Booking::create([
-                'user_id' => $userId,
-                'slot_id' => $slot->id,
-                'check_in_date' => $checkIn,
-                'check_out_date' => $checkOut,
-                'status' => 'confirmed',
-                'total_price' => $unitPrice,
-            ]);
-        }
+            $userId = auth()->id();
+            $unitPrice = $validated['total_price'] / $roomCount;
 
-        return view('user.checkout');
+            foreach ($availableSlots as $slot) {
+                Booking::create([
+                    'user_id' => $userId,
+                    'slot_id' => $slot->id,
+                    'check_in_date' => $checkIn,
+                    'check_out_date' => $checkOut,
+                    'status' => 'confirmed',
+                    'total_price' => $unitPrice,
+                ]);
+            }
+
+            return view('user.checkout');
+        });
     }
 
     public function myBookings(Request $request)
@@ -306,5 +315,50 @@ class BookingController extends Controller
         $booking->update(['status' => $validated['status']]);
 
         return back()->with('success', 'Booking status updated to ' . ucfirst($validated['status']) . ' successfully.');
+    }
+
+    public function adminOccupancy(Request $request)
+    {
+        $startDate = $request->query('start_date', Carbon::today()->toDateString());
+        $daysToShow = 14;
+        $dates = [];
+        for ($i = 0; $i < $daysToShow; $i++) {
+            $dates[] = Carbon::parse($startDate)->addDays($i);
+        }
+
+        $endDate = end($dates)->toDateString();
+        $prevDate = Carbon::parse($startDate)->subDays($daysToShow)->toDateString();
+        $nextDate = Carbon::parse($startDate)->addDays($daysToShow)->toDateString();
+
+        // Get all tents and slots, ordered naturally
+        $tents = Tent::with(['slots' => function ($query) {
+            $query->orderByRaw('LENGTH(tent_number) ASC, tent_number ASC');
+        }])->orderBy('name', 'asc')->get();
+
+        // Get confirmed bookings in this range
+        $bookings = Booking::with('user', 'slot')
+            ->where('status', 'confirmed')
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->where('check_in_date', '<', Carbon::parse($endDate)->addDay())
+                      ->where('check_out_date', '>', $startDate);
+            })
+            ->get();
+
+        // Prepare matrix: [slot_id][date_string] = booking
+        $matrix = [];
+        foreach ($bookings as $booking) {
+            $current = Carbon::parse($booking->check_in_date);
+            $out = Carbon::parse($booking->check_out_date);
+            
+            while ($current->lt($out)) {
+                $dateStr = $current->toDateString();
+                if ($current->gte($startDate) && $current->lte($endDate)) {
+                    $matrix[$booking->slot_id][$dateStr] = $booking;
+                }
+                $current->addDay();
+            }
+        }
+
+        return view('admin.bookings.occupancy', compact('tents', 'dates', 'matrix', 'startDate', 'prevDate', 'nextDate'));
     }
 }

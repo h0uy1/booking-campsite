@@ -117,8 +117,8 @@
             </a>
 
             <a href="/admin/bookings" 
-               class="{{ request()->is('admin/bookings*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} group flex items-center gap-3 p-3 rounded-xl transition-all">
-                <svg class="w-5 h-5 {{ request()->is('admin/bookings*') ? 'text-green-400' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               class="{{ request()->is('admin/bookings') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} group flex items-center gap-3 p-3 rounded-xl transition-all">
+                <svg class="w-5 h-5 {{ request()->is('admin/bookings') ? 'text-green-400' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-8 8h8m-8 4h8m-8 4h8"></path>
                 </svg>
                 <span class="font-medium">Bookings</span>
@@ -128,6 +128,14 @@
                 @if($pendingCount > 0)
                     <span class="ml-auto bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
                 @endif
+            </a>
+
+            <a href="/admin/bookings/occupancy" 
+               class="{{ request()->is('admin/bookings/occupancy') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} group flex items-center gap-3 p-3 rounded-xl transition-all">
+                <svg class="w-5 h-5 {{ request()->is('admin/bookings/occupancy') ? 'text-green-400' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+                </svg>
+                <span class="font-medium">Occupancy Matrix</span>
             </a>
         </nav>
 

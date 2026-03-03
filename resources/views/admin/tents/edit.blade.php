@@ -479,6 +479,7 @@
                                                 <label
                                                     class="block text-xs font-bold text-gray-500 uppercase mb-1">Tent
                                                     Number / Identifier</label>
+                                                <input type="hidden" name="slots[{{ $index }}][id]" value="{{ data_get($slot, 'id') }}">
                                                 <input type="text" name="slots[{{ $index }}][tent_number]"
                                                     value="{{ data_get($slot, 'tent_number') }}"
                                                     class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 @error('slots.' . $index . '.tent_number') border-red-500 @enderror"

@@ -251,21 +251,29 @@ class TentController extends Controller
                 }
             }
 
-            // Update slots
-            $oldSlots = $tent->slots()->get();
-
+            // Update slots (Syncing logic)
+            $submittedSlotIds = [];
             if ($request->has('slots')) {
-                foreach ($request->slots as $index => $slotData) {
+                foreach ($request->slots as $slotData) {
                     if (!empty($slotData['tent_number'])) {
-                        $oldSlot = $oldSlots->get($index);
-                        if ($oldSlot) {
-                            $oldSlot->update([
-                                'tent_number' => $slotData['tent_number'],
-                            ]);
+                        if (isset($slotData['id']) && !empty($slotData['id'])) {
+                            // Update existing
+                            $slot = $tent->slots()->find($slotData['id']);
+                            if ($slot) {
+                                $slot->update(['tent_number' => $slotData['tent_number']]);
+                                $submittedSlotIds[] = $slot->id;
+                            }
+                        } else {
+                            // Create new
+                            $newSlot = $tent->slots()->create(['tent_number' => $slotData['tent_number']]);
+                            $submittedSlotIds[] = $newSlot->id;
                         }
                     }
                 }
             }
+
+            // Delete slots that were removed from the form
+            $tent->slots()->whereNotIn('id', $submittedSlotIds)->delete();
         });
 
         return redirect('/admin/tents')->with('success', 'Tent updated successfully!');

@@ -8,7 +8,7 @@
         <!-- Breadcrumbs -->
         <nav class="flex text-sm font-bold" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li><a href="{{ route('booking.index') }}" class="text-gray-400 hover:text-green-600 transition-colors">Packages</a></li>
+                <li><a href="{{ route('booking.index', ['check_in' => $checkIn, 'check_out' => $checkOut, 'adults' => $adults, 'children' => $children]) }}" class="text-gray-400 hover:text-green-600 transition-colors">Packages</a></li>
                 <li><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg></li>
                 <li class="text-gray-600">{{ $tent->name }}</li>
             </ol>
@@ -25,7 +25,6 @@
                 $galleryImages->push(asset('storage/' . $tent->image));
             }
             $count = $galleryImages->count();
-
             // Price Calculation
             $startDate = \Carbon\Carbon::parse($checkIn);
             $endDate = \Carbon\Carbon::parse($checkOut);
@@ -64,19 +63,7 @@
             }
         @endphp
 
-        <div class="relative rounded-[2.5rem] overflow-hidden shadow-2xl h-[400px] md:h-[550px] group bg-gray-100"
-             x-data="{ 
-                activeSlide: 0, 
-                slides: {{ $galleryImages->toJson() }},
-                scrollTo(index) {
-                    this.activeSlide = index;
-                    const container = this.$refs.container;
-                    container.scrollTo({
-                        left: container.offsetWidth * index,
-                        behavior: 'smooth'
-                    });
-                }
-             }">
+        <div class="relative rounded-[2.5rem] shadow-2xl h-[400px] md:h-[550px] group bg-gray-100">
             @if($count === 0)
                 <div class="w-full h-full bg-green-50 flex flex-col items-center justify-center">
                     <svg class="w-24 h-24 text-green-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -84,32 +71,21 @@
                 </div>
             @else
                 {{-- Carousel Container --}}
-                <div x-ref="container" 
-                     class="flex h-full w-full overflow-hidden select-none">
-                    @foreach($galleryImages as $index => $image)
-                        <div class="flex-shrink-0 w-full h-full snap-center">
-                            <img src="{{ $image }}" class="w-full h-full object-cover transition-transform duration-1000" alt="Campsite {{ $index + 1 }}">
-                        </div>
-                    @endforeach
-                </div>
-
-                {{-- Navigation Controls Removed --}}
-
-                    {{-- Progress Indicators --}}
-                    <div class="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+                <div x-ref="container" class="w-full h-full relative overflow-hidden">
                         @foreach($galleryImages as $index => $image)
-                            <button @click="scrollTo({{ $index }})" 
-                                    class="h-1.5 transition-all duration-500 rounded-full bg-white shadow-sm"
-                                    :class="activeSlide === {{ $index }} ? 'w-8' : 'w-2 bg-white/50 hover:bg-white/80'"></button>
+                            <div class="mySlides fade h-full w-full">
+                                <img src="{{ $image }}" class="w-full h-full object-contain pointer-events-none" alt="Campsite {{ $index + 1 }}">
+                            </div>
                         @endforeach
-                    </div>
-
+                        <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+                        <a class="next" onclick="plusSlides(1)">&#10095;</a>
+                </div>
             @endif
 
             {{-- Floating Badge for Gallery --}}
-            <div class="absolute top-6 right-6">
+            <div class="absolute top-6 right-6 z-20">
                 <div class="bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-[10px] font-black text-white shadow-xl border border-white/20 uppercase tracking-widest flex items-center gap-2">
-                    <span x-text="activeSlide + 1"></span> / {{ $count }} Photos
+                    <span id="active-photo-index">1</span> / {{ $count }} Photos
                 </div>
             </div>
         </div>
@@ -395,7 +371,7 @@
                                  <div class="flex items-center justify-between">
                                      <span id="viewer-count" class="text-sm font-bold text-red-700 italic">... people viewing now</span>
                                      <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
-                                 </div>
+                                </div>
                             </div>
                         </div>
                         @if($tent->slots_count > 0)
@@ -406,7 +382,7 @@
                                 <input type="hidden" name="check_in_date" value="{{ $checkIn }}">
                                 <input type="hidden" name="check_out_date" value="{{ $checkOut }}">
                                 <input type="hidden" name="total_price" id="form_total_price" value="{{ $totalPrice }}">
-                                
+
                                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-green-100 group/btn flex items-center justify-center mb-6">
                                     Reserve Now
                                     <svg class="w-6 h-6 ml-2 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -493,4 +469,42 @@
 
     // Poll every 20 seconds
     setInterval(updateViewerCount, 20000);
+
+
+let slideIndex = 1;
+showSlides(slideIndex);
+
+// Next/previous controls
+function plusSlides(n) {
+  showSlides(slideIndex += n);
+}
+
+// Thumbnail image controls
+function currentSlide(n) {
+  showSlides(slideIndex = n);
+}
+
+function showSlides(n) {
+  let i;
+  let slides = document.getElementsByClassName("mySlides");
+  let dots = document.getElementsByClassName("dot");
+  if (n > slides.length) {slideIndex = 1}
+  if (n < 1) {slideIndex = slides.length}
+  for (i = 0; i < slides.length; i++) {
+    slides[i].style.display = "none";
+  }
+  for (i = 0; i < dots.length; i++) {
+    dots[i].className = dots[i].className.replace(" active", "");
+  }
+  slides[slideIndex-1].style.display = "block";
+  if (dots.length > 0) {
+    dots[slideIndex-1].className += " active";
+  }
+  
+  // Update photo badge
+  const badge = document.getElementById('active-photo-index');
+  if (badge) {
+    badge.innerText = slideIndex;
+  }
+}
 </script>
