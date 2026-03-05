@@ -8,6 +8,9 @@ use App\Http\Controllers\AdminAuthController;
 Route::get('/', function () {
     return redirect('/user');
 });
+Route::get('/home', function () {
+    return redirect('/user');
+});
 Route::get('/booking', function () {
     return view('booking');
 });
@@ -53,4 +56,6 @@ Route::get('/admin/login', function () {
 
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+
+
 

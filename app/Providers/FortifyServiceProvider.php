@@ -65,6 +65,7 @@ class FortifyServiceProvider extends ServiceProvider
             return view('auth.reset-password', ['request' => $request]);
         });
         Fortify::redirects('login', '/user');
+        Fortify::redirects('register', '/user');
 
 
 

@@ -45,7 +45,13 @@ class BookingController extends Controller
             $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->where('check_in_date', '<', $checkOut)
                     ->where('check_out_date', '>', $checkIn)
-                    ->where('status', 'confirmed');
+                    ->where(function ($q) {
+                            $q->where('status', 'confirmed')
+                                ->orWhere(function ($q2) {
+                                    $q2->where('status', 'pending')
+                                        ->where('expires_at', '>', now());
+                                });
+                        });
             });
         };
 
@@ -68,18 +74,58 @@ class BookingController extends Controller
         return $query;
     }
 
+    private function computePrice($id, int $adults, int $children, string $checkIn, string $checkOut)
+    {
+        $tent = Tent::with('prices')->where('id', $id)->first();
+        $startDate = Carbon::parse($checkIn);
+        $endDate = Carbon::parse($checkOut);
+        $nights = $startDate->diffInDays($endDate) ?: 1;
+
+        $totalPrice = 0;
+        if ($tent->pricing_type == 'person') {
+            $price = $tent->prices->first();
+            $totalAdultPrice = ($price->adult_price ?? 0) * $adults * $nights;
+            $totalChildPrice = ($price->child_price ?? 0) * $children * $nights;
+            $totalPrice = $totalAdultPrice + $totalChildPrice;
+        } else {
+            $matchedPrice = $tent->prices->where('capacity', '=', $adults)->first();
+            if (!$matchedPrice) {
+                $matchedPrice = $tent->prices->sortByDesc('capacity')->first();
+            }
+
+            // Calculate price night by night (Sat are weekends)
+            for ($i = 0; $i < $nights; $i++) {
+                $currentDay = $startDate->copy()->addDays($i);
+                $isWeekend = in_array($currentDay->dayOfWeek, [Carbon::SATURDAY]);
+
+                if ($isWeekend) {
+                    $dailyPrice = $matchedPrice->price_weekend ?? 0;
+                } else {
+                    $dailyPrice = $matchedPrice->price_weekday ?? 0;
+                }
+
+                // Add child surcharge
+                if ($children > 0 && isset($matchedPrice->child_price) && $matchedPrice->child_price > 0) {
+                    $dailyPrice += ($matchedPrice->child_price * $children);
+                }
+
+                $totalPrice += $dailyPrice;
+            }
+        }
+        return $totalPrice;
+    }
     public function user(Request $request)
     {
         ['currentDate' => $currentDate, 'nextDate' => $nextDate] = $this->getDateRange($request);
-        
+
         $adults = (int) $request->input('adults', $request->query('adults', 2));
         $children = (int) $request->input('children', $request->query('children', 0));
         $guests = $adults + $children;
         $sort = $request->query('sort', 'recommended');
 
         $tents = $this->getAvailableTents($currentDate, $nextDate, $guests, $adults, $sort)
-                      ->paginate(4)
-                      ->withQueryString();
+            ->paginate(4)
+            ->withQueryString();
 
         return view('user.index', compact('tents', 'currentDate', 'nextDate', 'adults', 'children', 'sort'));
     }
@@ -91,7 +137,14 @@ class BookingController extends Controller
         $availabilityQuery = function ($query) use ($checkIn, $checkOut) {
             $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->where('check_in_date', '<', $checkOut)
-                    ->where('check_out_date', '>', $checkIn);
+                    ->where('check_out_date', '>', $checkIn)
+                    ->where(function ($q) {
+                            $q->where('status', 'confirmed')
+                                ->orWhere(function ($q2) {
+                                    $q2->where('status', 'pending')
+                                        ->where('expires_at', '>', now());
+                                });
+                        });
             });
         };
 
@@ -117,17 +170,17 @@ class BookingController extends Controller
         $cacheKey = "tent_viewers_{$tentId}";
         $sessionId = session()->getId();
         $viewers = Cache::get($cacheKey, []);
-        
+
         // Add or update current viewer with current timestamp
         $viewers[$sessionId] = now()->timestamp;
-        
+
         // Remove viewers who haven't been active for more than 5 minutes
-        $viewers = array_filter($viewers, function($timestamp) {
+        $viewers = array_filter($viewers, function ($timestamp) {
             return $timestamp > now()->subMinutes(5)->timestamp;
         });
-        
+
         Cache::put($cacheKey, $viewers, now()->addMinutes(10));
-        
+
         return count($viewers);
     }
 
@@ -135,62 +188,80 @@ class BookingController extends Controller
     {
         $cacheKey = "tent_viewers_{$id}";
         $viewers = Cache::get($cacheKey, []);
-        
+
         // Clean up expired (this helps keep it accurate when polled)
-        $viewers = array_filter($viewers, function($timestamp) {
+        $viewers = array_filter($viewers, function ($timestamp) {
             return $timestamp > now()->subMinutes(5)->timestamp;
         });
-        
+
         return response()->json(['count' => count($viewers)]);
     }
 
     // checkAvailability method replaced by user method consolidation
 
-    public function checkout(Request $request){
+    public function checkout(Request $request)
+    {
+
+        $expiredAt = now()->addMinute(15);
         $validated = $request->validate([
-            'tent_id' => 'required|exists:tents,id',
-            'room_count' => 'required|integer|min:1',
+            'tent' => 'required|exists:tents,id',
             'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
-            'total_price' => 'required|numeric|min:0',
+            'customer_name' => 'nullable|string',
+            'customer_email' => 'nullable|email',
+            'customer_phone' => 'nullable|string',
+            'customer_address' => 'nullable|string',
         ]);
+        $totalPrice = $this->computePrice(
+            $validated['tent'],
+            (int) $request->input('adults', 2),
+            (int) $request->input('children', 0),
+            $validated['check_in_date'],
+            $validated['check_out_date']
+        );
+        $validated['total_price'] = $totalPrice;
+        $validated['expires_at'] = $expiredAt;
 
-        return DB::transaction(function () use ($validated) {
+        $userId = auth()->check() ? auth()->id() : null;
 
-            $tentId = $validated['tent_id'];
-            $roomCount = $validated['room_count'];
+
+        DB::transaction(function () use ($validated, $totalPrice, $expiredAt, $userId) {
+
+            $tentId = $validated['tent'];
             $checkIn = $validated['check_in_date'];
             $checkOut = $validated['check_out_date'];
 
-            $availableSlots = Slot::where('tent_id', $tentId)
+            $availableSlot = Slot::where('tent_id', $tentId)
+                ->lockForUpdate()
                 ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                     $query->where('check_in_date', '<', $checkOut)
                         ->where('check_out_date', '>', $checkIn)
-                        ->where('status', 'confirmed');
+                        ->where(function ($q) {
+                            $q->where('status', 'confirmed')
+                                ->orWhere(function ($q2) {
+                                    $q2->where('status', 'pending')
+                                        ->where('expires_at', '>', now());
+                                });
+                        });
                 })
-                ->lockForUpdate()
-                ->take($roomCount)
-                ->get();
+                ->orderBy('id')
+                ->first();
 
-            if ($availableSlots->count() < $roomCount) {
-                throw new \Exception('Not enough slots available.');
+            if (!$availableSlot) {
+                abort(409, 'No available slot for selected dates.');
             }
+            dd($availableSlot);
 
-            $userId = auth()->id();
-            $unitPrice = $validated['total_price'] / $roomCount;
-
-            foreach ($availableSlots as $slot) {
-                Booking::create([
-                    'user_id' => $userId,
-                    'slot_id' => $slot->id,
-                    'check_in_date' => $checkIn,
-                    'check_out_date' => $checkOut,
-                    'status' => 'confirmed',
-                    'total_price' => $unitPrice,
-                ]);
-            }
-
-            return view('user.checkout');
+            $booking =Booking::create([
+                'user_id' => $userId,
+                'slot_id' => $availableSlot->id,
+                'check_in_date' => $checkIn,
+                'check_out_date' => $checkOut,
+                'status' => 'pending',
+                'total_price' => $totalPrice,
+                'expires_at' => $expiredAt,
+            ]);
+            
         });
     }
 
@@ -218,7 +289,7 @@ class BookingController extends Controller
                 // Search User Name / Email
                 $q->orWhereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', '%' . $search . '%')
-                              ->orWhere('email', 'like', '%' . $search . '%');
+                        ->orWhere('email', 'like', '%' . $search . '%');
                 });
 
                 // Search Campsite Name or Slot Number
@@ -240,7 +311,7 @@ class BookingController extends Controller
             $date = $request->date;
             $query->where(function ($q) use ($date) {
                 $q->where('check_in_date', '<=', $date)
-                  ->where('check_out_date', '>=', $date);
+                    ->where('check_out_date', '>=', $date);
             });
         }
 
@@ -264,7 +335,7 @@ class BookingController extends Controller
                 }
                 $q->orWhereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', '%' . $search . '%')
-                              ->orWhere('email', 'like', '%' . $search . '%');
+                        ->orWhere('email', 'like', '%' . $search . '%');
                 });
                 $q->orWhereHas('slot.tent', function ($tentQuery) use ($search) {
                     $tentQuery->where('name', 'like', '%' . $search . '%');
@@ -284,7 +355,7 @@ class BookingController extends Controller
             $date = $request->date;
             $query->where(function ($q) use ($date) {
                 $q->where('check_in_date', '<=', $date)
-                  ->where('check_out_date', '>=', $date);
+                    ->where('check_out_date', '>=', $date);
             });
         }
 
@@ -299,8 +370,8 @@ class BookingController extends Controller
             'pending' => Booking::where('status', 'pending')->count(),
             'confirmed' => Booking::where('status', 'confirmed')->count(),
             'revenue_30d' => Booking::where('status', 'confirmed')
-                                    ->where('created_at', '>=', Carbon::now()->subDays(30))
-                                    ->sum('total_price'),
+                ->where('created_at', '>=', Carbon::now()->subDays(30))
+                ->sum('total_price'),
         ];
 
         return view('admin.bookings.index', compact('bookings', 'stats'));
@@ -340,7 +411,7 @@ class BookingController extends Controller
             ->where('status', 'confirmed')
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->where('check_in_date', '<', Carbon::parse($endDate)->addDay())
-                      ->where('check_out_date', '>', $startDate);
+                    ->where('check_out_date', '>', $startDate);
             })
             ->get();
 
@@ -349,7 +420,7 @@ class BookingController extends Controller
         foreach ($bookings as $booking) {
             $current = Carbon::parse($booking->check_in_date);
             $out = Carbon::parse($booking->check_out_date);
-            
+
             while ($current->lt($out)) {
                 $dateStr = $current->toDateString();
                 if ($current->gte($startDate) && $current->lte($endDate)) {

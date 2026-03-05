@@ -349,23 +349,7 @@
                                  </div>
                             </div>
                             
-                            <!-- Room Count Selector -->
-                            <div class="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                                <label for="room_count" class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Number of Units</label>
-                                <div class="relative">
-                                    <select id="room_count_select" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-black text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none cursor-pointer">
-                                        @for($i = 1; $i <= $tent->slots_count; $i++)
-                                            <option value="{{ $i }}">
-                                                {{ $i }} Unit{{ $i > 1 ? 's' : '' }}
-                                            </option>
-                                        @endfor
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-400">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </div>
-                                </div>
-                                <p class="text-[10px] font-bold text-gray-400 mt-2 italic">Each unit accommodates up to {{ $tent->max_capacity }} pax</p>
-                            </div>
+                           
                             <div class="p-4 bg-red-50 rounded-2xl border border-red-100">
                                  <p class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Urgency</p>
                                  <div class="flex items-center justify-between">
@@ -377,11 +361,11 @@
                         @if($tent->slots_count > 0)
                             <form action="{{ route('booking.checkout') }}" method="POST">
                                 @csrf
-                                <input type="hidden" name="tent_id" value="{{ $tent->id }}">
-                                <input type="hidden" name="room_count" id="form_room_count" value="1">
+                                <input type="hidden" name="tent" value="{{ $tent->id}}">
                                 <input type="hidden" name="check_in_date" value="{{ $checkIn }}">
                                 <input type="hidden" name="check_out_date" value="{{ $checkOut }}">
-                                <input type="hidden" name="total_price" id="form_total_price" value="{{ $totalPrice }}">
+                                <input type="hidden" name="adults" value="{{ $adults }}">
+                                <input type="hidden" name="children" value="{{ $children }}">
 
                                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-green-100 group/btn flex items-center justify-center mb-6">
                                     Reserve Now
