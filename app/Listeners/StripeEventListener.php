@@ -34,7 +34,6 @@ class StripeEventListener
                 if ($session['payment_status'] === 'paid') {
                     $booking->update([
                         'status' => 'confirmed',
-                        'customer_name' => $session['customer_details']['name'],
                         'customer_phone' => $session['customer_details']['phone'],
                         'stripe_payment_intent_id' => $session['payment_intent'] ?? null,
 
