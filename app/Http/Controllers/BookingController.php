@@ -201,8 +201,10 @@ class BookingController extends Controller
 
     public function checkout(Request $request)
     {
-
-        $expiredAt = now()->addMinute(15);
+        if (!auth()->check()) {
+            return redirect('/login');
+        }
+        $expiredAt = now()->addMinute(30);
         $validated = $request->validate([
             'tent' => 'required|exists:tents,id',
             'check_in_date' => 'required|date|after_or_equal:today',
@@ -222,10 +224,9 @@ class BookingController extends Controller
         $validated['total_price'] = $totalPrice;
         $validated['expires_at'] = $expiredAt;
 
-        $userId = auth()->check() ? auth()->id() : null;
+        $user = auth()->user();
 
-
-        DB::transaction(function () use ($validated, $totalPrice, $expiredAt, $userId) {
+        return DB::transaction(function () use ($validated, $totalPrice, $expiredAt, $user) {
 
             $tentId = $validated['tent'];
             $checkIn = $validated['check_in_date'];
@@ -250,10 +251,9 @@ class BookingController extends Controller
             if (!$availableSlot) {
                 abort(409, 'No available slot for selected dates.');
             }
-            dd($availableSlot);
-
+            $tent = Tent::findOrFail($tentId);
             $booking =Booking::create([
-                'user_id' => $userId,
+                'user_id' => $user->id,
                 'slot_id' => $availableSlot->id,
                 'check_in_date' => $checkIn,
                 'check_out_date' => $checkOut,
@@ -262,7 +262,59 @@ class BookingController extends Controller
                 'expires_at' => $expiredAt,
             ]);
             
+            $amountCents = (int) round($totalPrice * 100);
+            
+            $session = $user->checkoutCharge($amountCents,$tent->name . " booking from " . $checkIn . " to " . $checkOut, 1,
+            [
+                'mode'=>'payment',
+                'expires_at' => $expiredAt->timestamp,
+                'metadata' => [
+                    'booking_id' => $booking->id
+                ],
+                'success_url' => route('checkout.success'). '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => route('checkout.cancel',['booking' => $booking->id]),
+
+            ]);
+            $booking->update(['stripe_session_id' => $session->id]);
+            return redirect()->away($session->url);
+
+            
         });
+
+        
+    }
+
+    public function checkoutSuccess(Request $request)
+    {
+        $sessionId = $request->query('session_id');
+        if (!$sessionId) {
+            return redirect()->route('booking.index');
+        }
+
+        // Securely find the booking for the current user
+        $booking = Booking::with('slot.tent')
+            ->where('stripe_session_id', $sessionId)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        return view('checkout-success', compact('booking'));
+    }
+
+    public function checkoutCancel(Request $request)
+    {
+        $bookingId = $request->query('booking');
+        if ($bookingId) {
+            $booking = Booking::where('id', $bookingId)
+                ->where('user_id', auth()->id())
+                ->where('status', 'pending')
+                ->first();
+
+            if ($booking) {
+                $booking->delete();
+            }
+        }
+        
+        return redirect()->route('booking.index')->with('error', 'Booking payment was cancelled. Your reservation has been removed.');
     }
 
     public function myBookings(Request $request)

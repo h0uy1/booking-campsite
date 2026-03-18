@@ -57,5 +57,6 @@ Route::get('/admin/login', function () {
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
+Route::get('checkout/success', [BookingController::class, 'checkoutSuccess'])->name('checkout.success');
 
-
+Route::get('checkout/cancel', [BookingController::class, 'checkoutCancel'])->name('checkout.cancel');

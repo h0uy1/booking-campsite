@@ -19,7 +19,8 @@ class Booking extends Model
         'customer_phone',
         'customer_address',
         'is_seen',
-
+        'stripe_session_id',
+        'expires_at',
     ];
     
     public function slot()
