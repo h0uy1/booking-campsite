@@ -46,12 +46,12 @@ class BookingController extends Controller
                 $q->where('check_in_date', '<', $checkOut)
                     ->where('check_out_date', '>', $checkIn)
                     ->where(function ($q) {
-                            $q->where('status', 'confirmed')
-                                ->orWhere(function ($q2) {
-                                    $q2->where('status', 'pending')
-                                        ->where('expires_at', '>', now());
-                                });
-                        });
+                        $q->where('status', 'confirmed')
+                            ->orWhere(function ($q2) {
+                                $q2->where('status', 'pending')
+                                    ->where('expires_at', '>', now());
+                            });
+                    });
             });
         };
 
@@ -139,12 +139,12 @@ class BookingController extends Controller
                 $q->where('check_in_date', '<', $checkOut)
                     ->where('check_out_date', '>', $checkIn)
                     ->where(function ($q) {
-                            $q->where('status', 'confirmed')
-                                ->orWhere(function ($q2) {
-                                    $q2->where('status', 'pending')
-                                        ->where('expires_at', '>', now());
-                                });
-                        });
+                        $q->where('status', 'confirmed')
+                            ->orWhere(function ($q2) {
+                                $q2->where('status', 'pending')
+                                    ->where('expires_at', '>', now());
+                            });
+                    });
             });
         };
 
@@ -252,7 +252,7 @@ class BookingController extends Controller
                 abort(409, 'No available slot for selected dates.');
             }
             $tent = Tent::findOrFail($tentId);
-            $booking =Booking::create([
+            $booking = Booking::create([
                 'user_id' => $user->id,
                 'slot_id' => $availableSlot->id,
                 'check_in_date' => $checkIn,
@@ -260,28 +260,33 @@ class BookingController extends Controller
                 'status' => 'pending',
                 'total_price' => $totalPrice,
                 'expires_at' => $expiredAt,
+                'customer_email'=> $user->email,
+                'customer_name'=> $user->name,
             ]);
-            
-            $amountCents = (int) round($totalPrice * 100);
-            
-            $session = $user->checkoutCharge($amountCents,$tent->name . " booking from " . $checkIn . " to " . $checkOut, 1,
-            [
-                'mode'=>'payment',
-                'expires_at' => $expiredAt->timestamp,
-                'metadata' => [
-                    'booking_id' => $booking->id
-                ],
-                'success_url' => route('checkout.success'). '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('checkout.cancel',['booking' => $booking->id]),
 
-            ]);
+            $amountCents = (int) round($totalPrice * 100);
+
+            $session = $user->checkoutCharge(
+                $amountCents,
+                $tent->name . " booking from " . $checkIn . " to " . $checkOut,
+                1,
+                [
+                    'mode' => 'payment',
+                    'expires_at' => $expiredAt->timestamp,
+                    'metadata' => [
+                        'booking_id' => $booking->id
+                    ],
+                    'success_url' => route('checkout.success') . '?session_id={CHECKOUT_SESSION_ID}',
+                    'cancel_url' => route('checkout.cancel', ['booking' => $booking->id]),
+                    'phone_number_collection' => [
+                        'enabled' => true,
+                    ]
+
+                ]
+            );
             $booking->update(['stripe_session_id' => $session->id]);
             return redirect()->away($session->url);
-
-            
         });
-
-        
     }
 
     public function checkoutSuccess(Request $request)
@@ -313,7 +318,7 @@ class BookingController extends Controller
                 $booking->delete();
             }
         }
-        
+
         return redirect()->route('booking.index')->with('error', 'Booking payment was cancelled. Your reservation has been removed.');
     }
 

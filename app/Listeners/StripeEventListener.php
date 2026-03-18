@@ -29,21 +29,22 @@ class StripeEventListener
             $session = $payload['data']['object'];
 
             $bookingId = $session['metadata']['booking_id'] ?? null;
-
             $booking = Booking::find($bookingId);
-            if ($booking && $booking->status === "pending"){
-                if ($booking->expires_at > now() && $session['payment_status'] === 'paid'){
+            if ($booking && $booking->status === "pending") {
+                if ($session['payment_status'] === 'paid') {
                     $booking->update([
-                        'status' => 'confirmed'
+                        'status' => 'confirmed',
+                        'customer_name' => $session['customer_details']['name'],
+                        'customer_phone' => $session['customer_details']['phone'],
+                        'stripe_payment_intent_id' => $session['payment_intent'] ?? null,
+
                     ]);
-                }else{
+                } else {
                     $booking->update([
                         'status' => 'cancelled'
                     ]);
                 }
             }
-            
         }
-
     }
 }
