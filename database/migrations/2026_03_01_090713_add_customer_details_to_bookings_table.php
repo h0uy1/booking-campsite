@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('bookings', function (Blueprint $table) {
-            $table->string('customer_name');
-            $table->string('customer_email');
-            $table->string('customer_phone');
-            $table->text('customer_address');
+            $table->string('customer_name')->nullable();
+            $table->string('customer_email')->nullable();
+            $table->string('customer_phone')->nullable();
+            $table->text('customer_address')->nullable();
         });
     }
 
