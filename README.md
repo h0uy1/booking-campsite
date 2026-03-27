@@ -1,59 +1,78 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Tam Durian Farm & Campsite Booking Platform 🏕️✨
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**🌎 Live Demo:** [https://tam-duran-farm.onrender.com](https://tam-duran-farm.onrender.com)
 
-## About Laravel
+A high-end, luxury campsite booking platform built with **Laravel 12** and **Tailwind CSS**. Designed to handle real-time reservations, secure checkout flows, and automated receipt generation for a premium guest experience.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ✨ Key Features
+- **Luxury UI/UX:** A bespoke, responsive frontend featuring a monochromatic 'stone' palette, elegant modern typography, and glassmorphism components.
+- **Real-Time Booking:** Dynamic campsite availability tracking, conflict prevention, and integrated admin blockout dates.
+- **Stripe Checkout:** Secure, PCI-compliant payment processing for all reservations using Stripe webhooks.
+- **Automated Email & PDF Receipts:** Built-in integration with the Resend API to send beautifully styled HTML confirmation emails, using `laravel-dompdf` to instantly generate and attach official A4 PDF invoices.
+- **Advanced Admin Dashboard:** Comprehensive backend featuring visual 14-day occupancy grids, lifetime KPI tracking, and complete manual booking management.
+- **Cloud-Ready:** Includes a highly optimized `Dockerfile` tailored specifically for seamless, memory-efficient deployment on platforms like Render or Fly.io using TiDB Serverless.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🛠️ Technology Stack
+- **Backend:** Laravel 12 (PHP 8.3+)
+- **Frontend:** Laravel Blade, Tailwind CSS v3, Alpine.js, Vite
+- **Database:** MySQL (Production on TiDB) / SQLite (Local)
+- **Integrations:** Stripe SDK, Resend PHP SDK, DomPDF
+- **Deployment:** Docker, Render, Nginx
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🚀 Local Development Setup
 
-## Learning Laravel
+Follow these steps to get the project running on your local machine:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 1. Clone the repository
+```bash
+git clone https://github.com/h0uy1/booking-campsite.git
+cd booking-campsite
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 2. Install Dependencies
+Ensure you have PHP 8.2+ and Node.js installed, then run:
+```bash
+composer install
+npm install
+```
 
-## Laravel Sponsors
+### 3. Environment Configuration
+Copy the example environment file and generate a secure application key:
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 4. Configure your APIs & Database
+Open the `.env` file and configure your local database (e.g., `sqlite` or `mysql`). You will also need to add your API keys to enable checkouts and emails:
+```env
+STRIPE_KEY=your_stripe_public_key
+STRIPE_SECRET=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_webhook_signing_secret
 
-### Premium Partners
+MAIL_MAILER=resend
+RESEND_API_KEY=re_your_resend_api_key
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 5. Run Migrations & Seeders
+This builds your database tables and populates it with a base admin account:
+```bash
+php artisan migrate --seed
+```
 
-## Contributing
+### 6. Compile Assets & Start the Server
+Compile the Tailwind CSS styles and launch the Laravel development server:
+```bash
+npm run build    # Or 'npm run dev' to watch for live changes
+php artisan serve
+```
+*Your application will now be live at `http://127.0.0.1:8000`.*
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## ☁️ Production Deployment
+This repository is pre-configured for Dockerized deployment on **Render.com**. 
+1. Select **Docker** as the runtime environment.
+2. The provided `Dockerfile` will automatically fetch `webdevops/php-nginx:8.3-alpine`, install Composer dependencies efficiently (`--ignore-platform-reqs`), and optimize the Nginx server.
+3. Don't forget to push your compiled `public/build` assets, set `APP_ENV=production`, and configure `$middleware->trustProxies(at: '*');` within `bootstrap/app.php` to prevent HTTPS mixed-content errors!
 
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+*Developed for Tam Durian Farm & Campsite Enterprise.*
