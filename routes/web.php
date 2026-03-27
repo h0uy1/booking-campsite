@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\BlockoutDateController;
 
 Route::get('/', function () {
     return redirect('/user');
@@ -15,6 +16,7 @@ Route::get('/booking', function () {
     return view('booking');
 });
 Route::get('/all', [BookingController::class, 'myBookings'])->name('user.bookings')->middleware('auth');
+Route::get('/my-bookings/{id}', [BookingController::class, 'showBooking'])->name('user.booking.show')->middleware('auth');
 Route::get('/add', function () {
     return view('add');
 });
@@ -33,9 +35,22 @@ Route::middleware(['auth:admin'])->group(function () {
     })->name('admin.dashboard');
 
     Route::get('/admin/bookings', [BookingController::class, 'adminIndex'])->name('admin.bookings.index');
+    Route::get('/admin/bookings/create', [BookingController::class, 'adminCreate'])->name('admin.bookings.create');
+    Route::get('/admin/bookings/tents', [BookingController::class, 'getTents'])->name('admin.bookings.tents');
+    Route::post('/admin/bookings', [BookingController::class, 'adminStore'])->name('admin.bookings.store');
+    Route::get('/admin/bookings/{booking}/edit', [BookingController::class, 'adminEdit'])->name('admin.bookings.edit');
+    Route::put('/admin/bookings/{booking}', [BookingController::class, 'adminUpdate'])->name('admin.bookings.update');
     Route::get('/admin/bookings/occupancy', [BookingController::class, 'adminOccupancy'])->name('admin.bookings.occupancy');
     Route::patch('/admin/bookings/{booking}/status', [BookingController::class, 'adminUpdateStatus'])->name('admin.bookings.status');
+    
+    // Blockout Dates
+    Route::get('/admin/blockouts', [BlockoutDateController::class, 'index'])->name('admin.blockouts.index');
+    Route::get('/admin/blockouts/create', [BlockoutDateController::class, 'create'])->name('admin.blockouts.create');
+    Route::post('/admin/blockouts', [BlockoutDateController::class, 'store'])->name('admin.blockouts.store');
+    Route::delete('/admin/blockouts/{blockout}', [BlockoutDateController::class, 'destroy'])->name('admin.blockouts.destroy');
 
+    // Admin Settings
+    Route::get('/admin/profile', [AdminProfileController::class, 'edit'])->name('admin.profile.edit');
     Route::get('/admin/tents/create', [TentController::class, 'create']);
     Route::post('/admin/tents', [TentController::class, 'store']);
     Route::get('/admin/tents', [TentController::class, 'index']);

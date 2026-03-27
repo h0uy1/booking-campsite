@@ -16,7 +16,7 @@
                     <div class="space-y-3">
                         <div class="flex justify-between">
                             <span class="text-gray-600">Campsite:</span>
-                            <span class="font-medium text-gray-900">{{ $booking->slot->tent->name }} (Slot #{{ $booking->slot->tent_number }})</span>
+                            <span class="font-medium text-gray-900">{{ $booking->slot->tent->name }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600">Dates:</span>
@@ -24,7 +24,7 @@
                         </div>
                         <div class="flex justify-between border-t border-gray-200 pt-3">
                             <span class="text-gray-600 font-semibold">Total Paid:</span>
-                            <span class="font-bold text-green-600">${{ number_format($booking->total_price, 2) }}</span>
+                            <span class="font-bold text-green-600">RM{{ number_format($booking->total_price, 2) }}</span>
                         </div>
                         <div class="flex justify-between items-center bg-white p-3 rounded-md border border-gray-100 shadow-sm mt-4">
                             <span class="text-gray-600">Status:</span>

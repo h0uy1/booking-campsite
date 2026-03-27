@@ -7,6 +7,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Laravel\Cashier\Events\WebhookReceived;
 use App\Models\Booking;
 use Carbon\Carbon;
+use Resend\Laravel\Facades\Resend;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StripeEventListener
 {
@@ -37,6 +39,22 @@ class StripeEventListener
                         'customer_phone' => $session['customer_details']['phone'],
                         'stripe_payment_intent_id' => $session['payment_intent'] ?? null,
 
+                    ]);
+
+                    // Generate PDF receipt
+                    $pdf = Pdf::loadView('pdf.receipt', ['booking' => $booking]);
+
+                    Resend::emails()->send([
+                        'from' => 'Tam Durian Farm Campsite <onboarding@resend.dev>',
+                        'to' => [$booking->user?->email ?? $booking->customer_email ?? $session['customer_details']['email']],
+                        'subject' => 'Booking Confirmed - Tam Durian Farm Campsite',
+                        'html' => view('emails.booking_confirmation', ['booking' => $booking])->render(),
+                        'attachments' => [
+                            [
+                                'filename' => 'receipt-BK' . str_pad($booking->id, 6, '0', STR_PAD_LEFT) . '.pdf',
+                                'content' => base64_encode($pdf->output()),
+                            ]
+                        ]
                     ]);
                 } else {
                     $booking->update([

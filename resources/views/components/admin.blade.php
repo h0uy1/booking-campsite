@@ -137,6 +137,14 @@
                 </svg>
                 <span class="font-medium">Occupancy Matrix</span>
             </a>
+
+            <a href="/admin/blockouts" 
+               class="{{ request()->is('admin/blockouts*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} group flex items-center gap-3 p-3 rounded-xl transition-all">
+                <svg class="w-5 h-5 {{ request()->is('admin/blockouts*') ? 'text-red-400' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <span class="font-medium">Blockout Dates</span>
+            </a>
         </nav>
 
         <!-- User Profile / Logout -->

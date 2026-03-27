@@ -91,8 +91,8 @@
                                             </div>
                                             @if($price)
                                                 <div class="flex items-center gap-3 text-xs">
-                                                    <span class="font-bold text-gray-900">${{ number_format($price->adult_price, 0) }} <span class="text-[10px] text-gray-400 font-normal">Adult</span></span>
-                                                    <span class="font-bold text-gray-900">${{ number_format($price->child_price, 0) }} <span class="text-[10px] text-gray-400 font-normal">Child</span></span>
+                                                    <span class="font-bold text-gray-900">RM{{ number_format($price->adult_price, 0) }} <span class="text-[10px] text-gray-400 font-normal">Adult</span></span>
+                                                    <span class="font-bold text-gray-900">RM{{ number_format($price->child_price, 0) }} <span class="text-[10px] text-gray-400 font-normal">Child</span></span>
                                                 </div>
                                             @endif
                                         @else
@@ -101,7 +101,7 @@
                                             </div>
                                             @php $minPrice = $tent->prices->min('price_weekday'); @endphp
                                             <div class="text-sm font-black text-gray-900">
-                                                ${{ number_format($minPrice ?? 0, 0) }} <span class="text-[10px] text-gray-400 font-normal tracking-normal uppercase">Starting</span>
+                                                RM{{ number_format($minPrice ?? 0, 0) }} <span class="text-[10px] text-gray-400 font-normal tracking-normal uppercase">Starting</span>
                                             </div>
                                         @endif
                                     </div>

@@ -32,7 +32,7 @@
                 </div>
                 <p class="text-sm font-medium text-gray-500 mb-1">30-Day Revenue</p>
                 <div class="flex items-baseline gap-2">
-                    <h3 class="text-3xl font-bold text-gray-900">${{ number_format($stats['monthly_revenue'], 2) }}</h3>
+                    <h3 class="text-3xl font-bold text-gray-900">RM{{ number_format($stats['monthly_revenue'], 2) }}</h3>
                 </div>
                 <div class="mt-4 flex items-center text-sm">
                     <span class="text-green-600 font-medium flex items-center bg-green-50 px-2 py-0.5 rounded-full">
@@ -131,7 +131,7 @@
                                                     <div class="text-xs text-gray-500">{{ $booking->slot->tent->name ?? 'N/A' }}</div>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                                    ${{ number_format($booking->total_price, 2) }}
+                                                    RM{{ number_format($booking->total_price, 2) }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 

@@ -1,10 +1,16 @@
 <x-admin>
     <div class="space-y-8 pb-12">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Reservations</h1>
-                <p class="text-sm text-gray-500 mt-1">Manage and track all campsite bookings.</p>
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Booking Management</h1>
+                <p class="mt-2 text-sm text-gray-500">View and manage all customer reservations</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.bookings.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Create Booking
+                </a>
             </div>
         </div>
 
@@ -24,7 +30,7 @@
             </div>
             <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden bg-gradient-to-br from-green-600 to-green-700">
                 <p class="text-xs font-bold text-green-100 uppercase tracking-wider">30-Day Revenue</p>
-                <h3 class="text-2xl font-bold text-white mt-1">${{ number_format($stats['revenue_30d'], 2) }}</h3>
+                <h3 class="text-2xl font-bold text-white mt-1">RM{{ number_format($stats['revenue_30d'], 2) }}</h3>
                 <div class="absolute -right-2 -bottom-2 opacity-10">
                     <svg class="w-20 h-20 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
@@ -58,8 +64,8 @@
         </div>
 
         <!-- Bookings Table -->
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm">
+            <div>
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
@@ -84,8 +90,8 @@
                                             {{ strtoupper(substr($booking->user->name ?? 'G', 0, 1)) }}
                                         </div>
                                         <div class="ml-3">
-                                            <div class="text-sm font-bold text-gray-900">{{ $booking->user->name ?? 'Guest User' }}</div>
-                                            <div class="text-xs text-gray-500">{{ $booking->user->email ?? 'N/A' }}</div>
+                                            <div class="text-sm font-bold text-gray-900">{{ $booking->user->name ?? $booking->customer_name ?? 'Guest User' }}</div>
+                                            <div class="text-xs text-gray-500">{{ $booking->user->email ?? $booking->customer_email ?? 'N/A' }}</div>
                                         </div>
                                     </div>
                                 </td>
@@ -98,9 +104,9 @@
                                     <div class="text-xs text-gray-500">to {{ \Carbon\Carbon::parse($booking->check_out_date)->format('M d, Y') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-bold text-gray-900">${{ number_format($booking->total_price, 2) }}</span>
+                                    <span class="text-sm font-bold text-gray-900">RM{{ number_format($booking->total_price, 2) }}</span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" x-data="{ openStatus: false }">
                                     @php
                                         $statusClasses = [
                                             'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -108,16 +114,15 @@
                                             'cancelled' => 'bg-red-100 text-red-800 border-red-200',
                                         ];
                                     @endphp
-                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $statusClasses[$booking->status] ?? 'bg-gray-100 text-gray-800 border-gray-200' }}">
-                                        {{ ucfirst($booking->status) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div x-data="{ open: false }" class="relative inline-block text-left">
-                                        <button @click="open = !open" type="button" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
+                                    <div class="relative inline-block text-left">
+                                        <button @click="openStatus = !openStatus" type="button" class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $statusClasses[$booking->status] ?? 'bg-gray-100 text-gray-800 border-gray-200' }} focus:outline-none hover:opacity-80 transition-opacity">
+                                            {{ ucfirst($booking->status) }}
+                                            <svg class="-mr-1 ml-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
                                         </button>
-                                        <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 focus:outline-none" style="display: none;">
+                                        
+                                        <div x-show="openStatus" @click.away="openStatus = false" class="origin-top-left absolute left-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 focus:outline-none" style="display: none;">
                                             <div class="py-1">
                                                 <form action="{{ route('admin.bookings.status', $booking->id) }}" method="POST">
                                                     @csrf
@@ -135,6 +140,12 @@
                                             </div>
                                         </div>
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{{ route('admin.bookings.edit', $booking->id) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                                        <svg class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                        Edit
+                                    </a>
                                 </td>
                             </tr>
                         @empty

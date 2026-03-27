@@ -36,11 +36,22 @@ class BookingController extends Controller
         ];
     }
 
+    private function isDateBlocked($checkIn, $checkOut)
+    {
+        return \App\Models\BlockoutDate::where('start_date', '<', $checkOut)
+            ->where('end_date', '>', $checkIn)
+            ->exists();
+    }
+
     /**
      * Get tents available for the given check-in/check-out and minimum guests.
      */
     private function getAvailableTents(string $checkIn, string $checkOut, int $guests, int $adults = 0, string $sort = 'recommended')
     {
+        if ($this->isDateBlocked($checkIn, $checkOut)) {
+            return Tent::whereRaw('1 = 0');
+        }
+
         $availabilityQuery = function ($query) use ($checkIn, $checkOut) {
             $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->where('check_in_date', '<', $checkOut)
@@ -127,14 +138,24 @@ class BookingController extends Controller
             ->paginate(4)
             ->withQueryString();
 
-        return view('user.index', compact('tents', 'currentDate', 'nextDate', 'adults', 'children', 'sort'));
+        $upcomingBlockouts = \App\Models\BlockoutDate::where('end_date', '>=', today())
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        return view('user.index', compact('tents', 'currentDate', 'nextDate', 'adults', 'children', 'sort', 'upcomingBlockouts'));
     }
 
     public function show($id, Request $request)
     {
         ['currentDate' => $checkIn, 'nextDate' => $checkOut] = $this->getDateRange($request);
 
-        $availabilityQuery = function ($query) use ($checkIn, $checkOut) {
+        $isBlocked = $this->isDateBlocked($checkIn, $checkOut);
+
+        $availabilityQuery = function ($query) use ($checkIn, $checkOut, $isBlocked) {
+            if ($isBlocked) {
+                $query->whereRaw('1 = 0');
+                return;
+            }
             $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->where('check_in_date', '<', $checkOut)
                     ->where('check_out_date', '>', $checkIn)
@@ -159,7 +180,11 @@ class BookingController extends Controller
         // Record current viewer
         $this->trackViewer($id);
 
-        return view('user.show', compact('tent', 'checkIn', 'checkOut', 'guests', 'adults', 'children'));
+        $upcomingBlockouts = \App\Models\BlockoutDate::where('end_date', '>=', today())
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        return view('user.show', compact('tent', 'checkIn', 'checkOut', 'guests', 'adults', 'children', 'upcomingBlockouts'));
     }
 
     /**
@@ -231,6 +256,10 @@ class BookingController extends Controller
             $tentId = $validated['tent'];
             $checkIn = $validated['check_in_date'];
             $checkOut = $validated['check_out_date'];
+
+            if ($this->isDateBlocked($checkIn, $checkOut)) {
+                return redirect()->back()->with('error', 'These dates are currently unavailable due to a campsite closure.');
+            }
 
             $availableSlot = Slot::where('tent_id', $tentId)
                 ->lockForUpdate()
@@ -377,10 +406,24 @@ class BookingController extends Controller
         return view('all', compact('bookings'));
     }
 
+    public function showBooking($id)
+    {
+        if (!auth()->check()) {
+            return redirect('/login');
+        }
+
+        $booking = Booking::with('slot.tent')
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
+
+        return view('booking-details', compact('booking'));
+    }
+
     public function adminIndex(Request $request)
     {
         $query = Booking::with('user', 'slot.tent');
 
+        // dd($query);
         // Text Search
         if ($request->filled('search')) {
             $search = $request->search;
@@ -390,6 +433,7 @@ class BookingController extends Controller
                 if (!empty($searchId)) {
                     $q->where('id', (int)$searchId);
                 }
+                $q->orWhere('customer_name', 'like', '%' . $search . '%');
                 $q->orWhereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', '%' . $search . '%')
                         ->orWhere('email', 'like', '%' . $search . '%');
@@ -432,6 +476,178 @@ class BookingController extends Controller
         ];
 
         return view('admin.bookings.index', compact('bookings', 'stats'));
+    }
+
+    public function adminCreate()
+    {
+        return view('admin.bookings.create');
+    }
+
+    public function getTents(Request $request)
+    {
+        $request->validate([
+            'check_in_date' => 'required|date',
+            'check_out_date' => 'required|date|after:check_in_date',
+        ]);
+
+        $checkIn = $request->check_in_date;
+        $checkOut = $request->check_out_date;
+        $excludeBookingId = $request->query('exclude_booking_id');
+
+        if ($this->isDateBlocked($checkIn, $checkOut)) {
+            return response()->json([]);
+        }
+
+        $availableTents = \App\Models\Tent::whereHas('slots', function ($query) use ($checkIn, $checkOut, $excludeBookingId) {
+            $query->whereDoesntHave('bookings', function ($q2) use ($checkIn, $checkOut, $excludeBookingId) {
+                if ($excludeBookingId) {
+                    $q2->where('id', '!=', $excludeBookingId);
+                }
+                $q2->where('check_in_date', '<', $checkOut)
+                   ->where('check_out_date', '>', $checkIn)
+                   ->where(function ($q3) {
+                       $q3->where('status', 'confirmed')
+                          ->orWhere(function ($q4) {
+                              $q4->where('status', 'pending')
+                                 ->where('expires_at', '>', now());
+                          });
+                   });
+            });
+        })->get(['id', 'name']);
+
+        return response()->json($availableTents);
+    }
+
+    public function adminStore(Request $request)
+    {
+        $validated = $request->validate([
+            'tent_id' => 'required|exists:tents,id',
+            'check_in_date' => 'required|date',
+            'check_out_date' => 'required|date|after:check_in_date',
+            'customer_name' => 'required|string',
+            'customer_email' => 'required|email',
+            'customer_phone' => 'nullable|string',
+            'customer_address' => 'nullable|string',
+            'total_price' => 'required|numeric|min:0',
+            'status' => 'required|in:pending,confirmed,cancelled',
+        ]);
+
+        $tentId = $validated['tent_id'];
+        $checkIn = $validated['check_in_date'];
+        $checkOut = $validated['check_out_date'];
+
+        if ($this->isDateBlocked($checkIn, $checkOut)) {
+            return back()->withInput()->with('error', 'Cannot create booking: The campsite is closed for the selected dates.');
+        }
+
+        $availableSlot = Slot::where('tent_id', $tentId)
+            ->lockForUpdate()
+            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
+                $query->where('check_in_date', '<', $checkOut)
+                    ->where('check_out_date', '>', $checkIn)
+                    ->where(function ($q) {
+                        $q->where('status', 'confirmed')
+                            ->orWhere(function ($q2) {
+                                $q2->where('status', 'pending')
+                                    ->where('expires_at', '>', now());
+                            });
+                    });
+            })
+            ->first();
+
+        if (!$availableSlot) {
+            return back()->withInput()->with('error', 'No slots available for the selected dates and campsite.');
+        }
+
+        $expiresAt = $validated['status'] === 'pending' ? now()->addDays(7) : null;
+
+        $booking = Booking::create([
+            'user_id' => null,
+            'slot_id' => $availableSlot->id,
+            'check_in_date' => $checkIn,
+            'check_out_date' => $checkOut,
+            'status' => $validated['status'],
+            'total_price' => $validated['total_price'],
+            'expires_at' => $expiresAt,
+            'customer_name' => $validated['customer_name'],
+            'customer_email' => $validated['customer_email'],
+            'customer_phone' => $validated['customer_phone'] ?? null,
+            'customer_address' => $validated['customer_address'] ?? null,
+        ]);
+
+        return redirect()->route('admin.bookings.index')->with('success', 'Manual booking created successfully.');
+    }
+
+    public function adminEdit(Booking $booking)
+    {
+        return view('admin.bookings.edit', compact('booking'));
+    }
+
+    public function adminUpdate(Request $request, Booking $booking)
+    {
+        $validated = $request->validate([
+            'tent_id' => 'required|exists:tents,id',
+            'check_in_date' => 'required|date',
+            'check_out_date' => 'required|date|after:check_in_date',
+            'customer_name' => 'required|string',
+            'customer_email' => 'required|email',
+            'customer_phone' => 'nullable|string',
+            'customer_address' => 'nullable|string',
+            'total_price' => 'required|numeric|min:0',
+            'status' => 'required|in:pending,confirmed,cancelled',
+        ]);
+
+        $tentId = $validated['tent_id'];
+        $checkIn = $validated['check_in_date'];
+        $checkOut = $validated['check_out_date'];
+
+        // If dates or tent changed, we need to verify slot availability
+        if ($booking->slot->tent_id != $tentId || $booking->check_in_date != $checkIn || $booking->check_out_date != $checkOut) {
+            
+            if ($this->isDateBlocked($checkIn, $checkOut)) {
+                return back()->withInput()->with('error', 'Cannot reschedule: The campsite is closed for the requested dates.');
+            }
+
+            $availableSlot = Slot::where('tent_id', $tentId)
+                ->lockForUpdate()
+                ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut, $booking) {
+                    $query->where('id', '!=', $booking->id) // Ignore the current booking
+                       ->where('check_in_date', '<', $checkOut)
+                       ->where('check_out_date', '>', $checkIn)
+                       ->where(function ($q3) {
+                           $q3->where('status', 'confirmed')
+                              ->orWhere(function ($q4) {
+                                  $q4->where('status', 'pending')
+                                     ->where('expires_at', '>', now());
+                              });
+                       });
+                })
+                ->first();
+
+            if (!$availableSlot) {
+                return back()->withInput()->with('error', 'No slots available for the selected dates and campsite to reschedule.');
+            }
+            $booking->slot_id = $availableSlot->id;
+        }
+
+        $expiresAt = $validated['status'] === 'pending' && $booking->status !== 'pending' ? now()->addDays(7) : $booking->expires_at;
+        if ($validated['status'] === 'confirmed') {
+            $expiresAt = null;
+        }
+
+        $booking->update([
+            'check_in_date' => $checkIn,
+            'check_out_date' => $checkOut,
+            'status' => $validated['status'],
+            'total_price' => $validated['total_price'],
+            'expires_at' => $expiresAt,
+            'customer_name' => $validated['customer_name'],
+            'customer_email' => $validated['customer_email'],
+            'customer_phone' => $validated['customer_phone'] ?? null,
+            'customer_address' => $validated['customer_address'] ?? null,
+        ]);
+
+        return redirect()->route('admin.bookings.index')->with('success', 'Booking updated successfully.');
     }
 
     public function adminUpdateStatus(Request $request, Booking $booking)
@@ -487,6 +703,25 @@ class BookingController extends Controller
             }
         }
 
-        return view('admin.bookings.occupancy', compact('tents', 'dates', 'matrix', 'startDate', 'prevDate', 'nextDate'));
+        $blockouts = \App\Models\BlockoutDate::where(function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate])
+                  ->orWhere(function ($q) use ($startDate, $endDate) {
+                      $q->where('start_date', '<=', $startDate)
+                        ->where('end_date', '>=', $endDate);
+                  });
+        })->get();
+        
+        $blockoutMatrix = [];
+        foreach ($blockouts as $block) {
+            $curr = \Carbon\Carbon::parse($block->start_date);
+            $out = \Carbon\Carbon::parse($block->end_date);
+            while ($curr->lt($out)) {
+                $blockoutMatrix[$curr->toDateString()] = $block;
+                $curr->addDay();
+            }
+        }
+
+        return view('admin.bookings.occupancy', compact('tents', 'dates', 'matrix', 'startDate', 'prevDate', 'nextDate', 'blockoutMatrix'));
     }
 }

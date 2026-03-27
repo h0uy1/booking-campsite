@@ -116,10 +116,15 @@
                                         @php
                                             $dateStr = $date->toDateString();
                                             $booking = $matrix[$slot->id][$dateStr] ?? null;
+                                            $isBlocked = isset($blockoutMatrix[$dateStr]);
                                         @endphp
-                                        @if($booking)
+                                        @if($isBlocked)
+                                            <td class="bg-red-50 border border-red-200" style="border: 1px solid #fca5a5 !important;" title="Campsite Closed: {{ $blockoutMatrix[$dateStr]->reason ?: 'Private Event' }}">
+                                                <div class="text-[9px] font-black text-red-600 uppercase text-center px-1">{{ $blockoutMatrix[$dateStr]->reason ?: 'Private Event' }}</div>
+                                            </td>
+                                        @elseif($booking)
                                             <td class="occupied-cell">
-                                                <div class="guest-name">{{ strtolower($booking->user->name ?? 'Guest') }}</div>
+                                                <div class="guest-name">{{ strtolower($booking->user->name ?? $booking->customer_name ?? 'Guest') }}</div>
                                                 <div class="flex gap-2 mt-1 font-bold text-[10px]">
                                                     <span>Adults: {{ $booking->adults ?? 2 }}</span>
                                                     <span>Kids: {{ $booking->children ?? 0 }}</span>
