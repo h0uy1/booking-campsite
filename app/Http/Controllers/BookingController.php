@@ -280,7 +280,7 @@ class BookingController extends Controller
             if (!$availableSlot) {
                 abort(409, 'No available slot for selected dates.');
             }
-            $tent = Tent::findOrFail($tentId);
+            $tent = Tent::with('images')->findOrFail($tentId);
             $booking = Booking::create([
                 'user_id' => $user->id,
                 'slot_id' => $availableSlot->id,
@@ -295,10 +295,32 @@ class BookingController extends Controller
 
             $amountCents = (int) round($totalPrice * 100);
 
-            $session = $user->checkoutCharge(
-                $amountCents,
-                $tent->name . " booking from " . $checkIn . " to " . $checkOut,
-                1,
+            $productData = [
+                'name' => $tent->name . " booking from " . $checkIn . " to " . $checkOut,
+            ];
+
+            if ($tent->images->isNotEmpty()) {
+                $firstImage = $tent->images->first()->image_path;
+                $imageUrl = filter_var($firstImage, FILTER_VALIDATE_URL) ? $firstImage : secure_asset('storage/' . $firstImage);
+                
+                // Stripe requires publicly accessible HTTPS URLs, so we avoid adding it on local dev (localhost) 
+                // to prevent Stripe InvalidRequestException crashing the checkout process locally.
+                if (str_starts_with($imageUrl, 'https://') && !str_contains($imageUrl, 'localhost') && !str_contains($imageUrl, '127.0.0.1')) {
+                    $productData['images'] = [$imageUrl];
+                }
+            }
+
+            $session = $user->checkout(
+                [
+                    [
+                        'price_data' => [
+                            'currency' => config('cashier.currency') ?: 'myr',
+                            'product_data' => $productData,
+                            'unit_amount' => $amountCents,
+                        ],
+                        'quantity' => 1,
+                    ]
+                ],
                 [
                     'mode' => 'payment',
                     'expires_at' => $expiredAt->timestamp,
@@ -310,7 +332,6 @@ class BookingController extends Controller
                     'phone_number_collection' => [
                         'enabled' => true,
                     ]
-
                 ]
             );
             $booking->update(['stripe_session_id' => $session->id]);
