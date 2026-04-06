@@ -5,6 +5,7 @@ use App\Http\Controllers\TentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\BlockoutDateController;
+use App\Http\Controllers\SlotStatusController;
 
 Route::get('/', function () {
     return redirect('/user');
@@ -48,6 +49,10 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::get('/admin/blockouts/create', [BlockoutDateController::class, 'create'])->name('admin.blockouts.create');
     Route::post('/admin/blockouts', [BlockoutDateController::class, 'store'])->name('admin.blockouts.store');
     Route::delete('/admin/blockouts/{blockout}', [BlockoutDateController::class, 'destroy'])->name('admin.blockouts.destroy');
+
+    // Slot Status Dashboard
+    Route::get('/admin/slots', [SlotStatusController::class, 'index'])->name('admin.slots.index');
+    Route::post('/admin/slots/update-state', [SlotStatusController::class, 'updateState'])->name('admin.slots.update_state');
 
     // Admin Settings
     Route::get('/admin/profile', [AdminProfileController::class, 'edit'])->name('admin.profile.edit');

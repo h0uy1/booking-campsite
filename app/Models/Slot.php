@@ -9,7 +9,7 @@ class Slot extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['tent_number', 'tent_id'];
+    protected $fillable = ['tent_number', 'tent_id', 'is_paused'];
 
     public function tent()
     {
@@ -21,4 +21,8 @@ class Slot extends Model
         return $this->hasMany(Booking::class);
     }
 
+    public function pauses()
+    {
+        return $this->hasMany(SlotPause::class);
+    }
 }

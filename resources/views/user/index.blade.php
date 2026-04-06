@@ -168,10 +168,17 @@
         document.addEventListener('DOMContentLoaded', function() {
             const checkInInput = document.getElementById('check_in');
             const checkOutInput = document.getElementById('check_out');
+            const adultsInput = document.getElementById('adults');
+            const childrenInput = document.getElementById('children');
+            const desktopForm = document.getElementById('search-form-desktop');
+
             const checkInMobile = document.getElementById('check_in_mobile');
             const checkOutMobile = document.getElementById('check_out_mobile');
+            const adultsMobile = document.getElementById('adults_mobile');
+            const childrenMobile = document.getElementById('children_mobile');
+            const mobileForm = document.getElementById('search-form-mobile');
 
-            function handleCheckInChange(inInput, outInput) {
+            function handleCheckInChange(inInput, outInput, form) {
                 if (!inInput.value) return;
                 
                 let date = new Date(inInput.value);
@@ -184,15 +191,23 @@
                 
                 outInput.value = nextDay;
                 outInput.min = nextDay;
+
+                if (form) form.submit();
             }
 
             if (checkInInput && checkOutInput) {
-                checkInInput.addEventListener('change', () => handleCheckInChange(checkInInput, checkOutInput));
+                checkInInput.addEventListener('change', () => handleCheckInChange(checkInInput, checkOutInput, desktopForm));
+                checkOutInput.addEventListener('change', () => { if (desktopForm) desktopForm.submit(); });
             }
+            if (adultsInput) adultsInput.addEventListener('change', () => { if (desktopForm) desktopForm.submit(); });
+            if (childrenInput) childrenInput.addEventListener('change', () => { if (desktopForm) desktopForm.submit(); });
             
             if (checkInMobile && checkOutMobile) {
-                checkInMobile.addEventListener('change', () => handleCheckInChange(checkInMobile, checkOutMobile));
+                checkInMobile.addEventListener('change', () => handleCheckInChange(checkInMobile, checkOutMobile, mobileForm));
+                checkOutMobile.addEventListener('change', () => { if (mobileForm) mobileForm.submit(); });
             }
+            if (adultsMobile) adultsMobile.addEventListener('change', () => { if (mobileForm) mobileForm.submit(); });
+            if (childrenMobile) childrenMobile.addEventListener('change', () => { if (mobileForm) mobileForm.submit(); });
         });
     </script>
 </x-layout>

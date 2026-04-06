@@ -53,7 +53,11 @@ class BookingController extends Controller
         }
 
         $availabilityQuery = function ($query) use ($checkIn, $checkOut) {
-            $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+            $query->whereDoesntHave('pauses', function ($q) use ($checkIn, $checkOut) {
+                      $q->where('start_date', '<', $checkOut)
+                        ->where('end_date', '>', $checkIn);
+                  })
+                  ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->where('check_in_date', '<', $checkOut)
                     ->where('check_out_date', '>', $checkIn)
                     ->where(function ($q) {
@@ -156,7 +160,11 @@ class BookingController extends Controller
                 $query->whereRaw('1 = 0');
                 return;
             }
-            $query->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+            $query->whereDoesntHave('pauses', function ($q) use ($checkIn, $checkOut) {
+                      $q->where('start_date', '<', $checkOut)
+                        ->where('end_date', '>', $checkIn);
+                  })
+                  ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->where('check_in_date', '<', $checkOut)
                     ->where('check_out_date', '>', $checkIn)
                     ->where(function ($q) {
@@ -262,6 +270,10 @@ class BookingController extends Controller
             }
 
             $availableSlot = Slot::where('tent_id', $tentId)
+                ->whereDoesntHave('pauses', function ($q) use ($checkIn, $checkOut) {
+                    $q->where('start_date', '<', $checkOut)
+                      ->where('end_date', '>', $checkIn);
+                })
                 ->lockForUpdate()
                 ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                     $query->where('check_in_date', '<', $checkOut)
@@ -520,7 +532,11 @@ class BookingController extends Controller
         }
 
         $availableTents = \App\Models\Tent::whereHas('slots', function ($query) use ($checkIn, $checkOut, $excludeBookingId) {
-            $query->whereDoesntHave('bookings', function ($q2) use ($checkIn, $checkOut, $excludeBookingId) {
+            $query->whereDoesntHave('pauses', function ($q) use ($checkIn, $checkOut) {
+                      $q->where('start_date', '<', $checkOut)
+                        ->where('end_date', '>', $checkIn);
+                  })
+                  ->whereDoesntHave('bookings', function ($q2) use ($checkIn, $checkOut, $excludeBookingId) {
                 if ($excludeBookingId) {
                     $q2->where('id', '!=', $excludeBookingId);
                 }
@@ -562,6 +578,10 @@ class BookingController extends Controller
         }
 
         $availableSlot = Slot::where('tent_id', $tentId)
+            ->whereDoesntHave('pauses', function ($q) use ($checkIn, $checkOut) {
+                $q->where('start_date', '<', $checkOut)
+                  ->where('end_date', '>', $checkIn);
+            })
             ->lockForUpdate()
             ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                 $query->where('check_in_date', '<', $checkOut)
@@ -630,6 +650,10 @@ class BookingController extends Controller
             }
 
             $availableSlot = Slot::where('tent_id', $tentId)
+                ->whereDoesntHave('pauses', function ($q) use ($checkIn, $checkOut) {
+                    $q->where('start_date', '<', $checkOut)
+                      ->where('end_date', '>', $checkIn);
+                })
                 ->lockForUpdate()
                 ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut, $booking) {
                     $query->where('id', '!=', $booking->id) // Ignore the current booking
