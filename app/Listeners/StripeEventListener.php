@@ -27,26 +27,28 @@ class StripeEventListener
     {
         //
         $payload = $event->payload;
-        if ($payload['type'] === 'checkout.session.completed') {
-            $session = $payload['data']['object'];
+        if ($payload['type'] === 'payment_intent.succeeded') {
+            $intent = $payload['data']['object'];
 
-            $bookingId = $session['metadata']['booking_id'] ?? null;
-            $booking = Booking::find($bookingId);
+            $bookingId = $intent['metadata']['booking_id'] ?? null;
+            $booking = Booking::with('user', 'slot.tent')->find($bookingId);
+
             if ($booking && $booking->status === "pending") {
-                if ($session['payment_status'] === 'paid') {
-                    $booking->update([
-                        'status' => 'confirmed',
-                        'customer_phone' => $session['customer_details']['phone'],
-                        'stripe_payment_intent_id' => $session['payment_intent'] ?? null,
+                $booking->update([
+                    'status' => 'confirmed',
+                    'stripe_payment_intent_id' => $intent['id'],
+                ]);
 
-                    ]);
+                // Generate PDF receipt
+                $pdf = Pdf::loadView('pdf.receipt', ['booking' => $booking]);
 
-                    // Generate PDF receipt
-                    $pdf = Pdf::loadView('pdf.receipt', ['booking' => $booking]);
+                // Determine recipient email
+                $recipientEmail = $booking->customer_email ?? $booking->user?->email;
 
+                if ($recipientEmail) {
                     Resend::emails()->send([
                         'from' => 'Tam Durian Farm Campsite <onboarding@resend.dev>',
-                        'to' => [$booking->user?->email ?? $booking->customer_email ?? $session['customer_details']['email']],
+                        'to' => [$recipientEmail],
                         'subject' => 'Booking Confirmed - Tam Durian Farm Campsite',
                         'html' => view('emails.booking_confirmation', ['booking' => $booking])->render(),
                         'attachments' => [
@@ -55,10 +57,6 @@ class StripeEventListener
                                 'content' => base64_encode($pdf->output()),
                             ]
                         ]
-                    ]);
-                } else {
-                    $booking->update([
-                        'status' => 'cancelled'
                     ]);
                 }
             }

@@ -345,8 +345,9 @@ class BookingController extends Controller
                 'status' => 'pending',
                 'total_price' => $totalPrice,
                 'expires_at' => $expiredAt,
-                'customer_email'=> $user->email,
-                'customer_name'=> $user->name,
+                'customer_email'=> $user->email ?? $validated['customer_email'],
+                'customer_name'=> $user->name ?? $validated['customer_name'],
+                'customer_phone'=> $validated['customer_phone'],
                 'adults' => $adults,
                 'children' => $children,
             ]);
@@ -356,17 +357,19 @@ class BookingController extends Controller
             try {
                 $payment = $user->charge($amountCents, $validated['payment_method_id'], [
                     'return_url' => route('checkout.success', ['booking_id' => $booking->id]),
+                    'metadata' => [
+                        'booking_id' => $booking->id,
+                    ],
                 ]);
 
                 $booking->update([
-                    'status' => 'confirmed',
-                    'stripe_session_id' => $payment->id
+                    'stripe_payment_intent_id' => $payment->id
                 ]);
 
                 return redirect()->route('checkout.success', ['booking_id' => $booking->id]);
 
             } catch (\Laravel\Cashier\Exceptions\IncompletePayment $exception) {
-                $booking->update(['stripe_session_id' => $exception->payment->id]);
+                $booking->update(['stripe_payment_intent_id' => $exception->payment->id]);
                 return redirect()->route(
                     'cashier.payment',
                     [$exception->payment->id, 'redirect' => route('checkout.success', ['booking_id' => $booking->id])]
@@ -390,10 +393,8 @@ class BookingController extends Controller
             ->where('user_id', auth()->id())
             ->firstOrFail();
             
-        // If it was via cashier.payment (3D Secure), the state might be incomplete before checking. Cashier handles it if 'redirect' param is sent. 
-        if ($booking->status === 'pending') {
-            $booking->update(['status' => 'confirmed']);
-        }
+        // If it was via cashier.payment (3D Secure), the state might be incomplete before checking. 
+        // Cashier handles it if 'redirect' param is sent, but we rely on the webhook for statusMaster.
 
         return view('checkout-success', compact('booking'));
     }
