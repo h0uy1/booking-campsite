@@ -350,7 +350,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            var stripe = Stripe('{{ env('STRIPE_KEY') }}');
+            var stripe = Stripe('{{ config('services.stripe.public') }}');
             var elements = stripe.elements();
 
             var style = {
