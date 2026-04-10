@@ -387,7 +387,8 @@
             var spinner = document.getElementById('spinner');
 
             var clientSecret = '{{ $intent->client_secret }}';
-            var cardHolderName = document.getElementById('ic_name'); // Can pull from "Enhance your stay" or Auth if needed, keeping simple
+            var cardHolderName = document.getElementById('first_name'); 
+            var customerEmail = document.getElementById('email');
 
             form.addEventListener('submit', function(event) {
                 event.preventDefault();
@@ -403,8 +404,8 @@
                         payment_method: {
                             card: card,
                             billing_details: {
-                                name: cardHolderName ? cardHolderName.value : '{{ auth()->user()->name }}',
-                                email: '{{ auth()->user()->email }}'
+                                name: cardHolderName ? cardHolderName.value : 'Guest',
+                                email: customerEmail ? customerEmail.value : ''
                             }
                         }
                     }
