@@ -80,13 +80,24 @@
 </head>
 <body>
 
-    <div class="header">
-        <div class="company-name">Tam Durian Farm & Campsite Enterprise</div>
-        <div class="company-details">
-            (202203319088 MA0295484-D)<br>
-            36, Jalan Kampung Ayer Merbau 7, Kampung Kongsai, 77200 Bemban, Melaka<br>
-            Email: tamduriancampsite@gmail.com
-        </div>
+    <table style="width: 100%; margin-bottom: 20px;">
+        <tr>
+            <td style="width: 20%; vertical-align: middle;">
+                <img src="{{ public_path('site2.png') }}" style="height: 70px;">
+            </td>
+            <td style="width: 60%; text-align: center; vertical-align: middle;">
+                <div class="company-name">Tam Durian Farm & Campsite Enterprise</div>
+                <div class="company-details">
+                    (202203319088 MA0295484-D)<br>
+                    36, Jalan Kampung Ayer Merbau 7, Kampung Kongsai, 77200 Bemban, Melaka<br>
+                    Email: tamduriancampsite@gmail.com
+                </div>
+            </td>
+            <td style="width: 20%;"></td>
+        </tr>
+    </table>
+
+    <div style="text-align: center; border-top: 1px solid #000; padding-top: 10px;">
         <div class="receipt-title">OFFICIAL RECEIPT</div>
     </div>
 
@@ -102,6 +113,8 @@
             <td style="width: 60%;">
                 <table style="width: 100%;">
                     <tr><td class="col-label">Guest Name :</td><td>{{ $guestName }}</td></tr>
+                    <tr><td class="col-label">Adult(s) :</td><td>{{ $booking->adults ?? 0 }}</td></tr>
+                    <tr><td class="col-label">Child(ren) :</td><td>{{ $booking->children ?? 0 }}</td></tr>
                     <tr><td class="col-label">Contact No. :</td><td>{{ $booking->customer_phone ?? 'N/A' }}</td></tr>
                     <tr><td class="col-label">Check-in date :</td><td>{{ \Carbon\Carbon::parse($booking->check_in_date)->format('l, F d, Y') }}</td></tr>
                     <tr><td class="col-label">Check-out date :</td><td>{{ \Carbon\Carbon::parse($booking->check_out_date)->format('l, F d, Y') }}</td></tr>
