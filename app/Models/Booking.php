@@ -21,6 +21,8 @@ class Booking extends Model
         'is_seen',
         'stripe_session_id',
         'expires_at',
+        'adults',
+        'children',
     ];
     
     public function slot()

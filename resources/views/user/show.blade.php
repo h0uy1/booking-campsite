@@ -49,17 +49,35 @@
             $nights = $startDate->diffInDays($endDate) ?: 1;
             
             $totalPrice = 0;
+            $priceBreakdown = [];
+
             if ($tent->pricing_type == 'person') {
                 $price = $tent->prices->first();
                 $totalAdultPrice = ($price->adult_price ?? 0) * $adults * $nights;
                 $totalChildPrice = ($price->child_price ?? 0) * $children * $nights;
                 $totalPrice = $totalAdultPrice + $totalChildPrice;
+
+                $priceBreakdown[] = [
+                    'label' => "$adults Adults x RM" . number_format($price->adult_price ?? 0, 0) . " x $nights nights",
+                    'amount' => $totalAdultPrice
+                ];
+
+                if ($children > 0 && ($price->child_price ?? 0) > 0) {
+                    $priceBreakdown[] = [
+                        'label' => "$children Children x RM" . number_format($price->child_price ?? 0, 0) . " x $nights nights",
+                        'amount' => $totalChildPrice
+                    ];
+                }
+
             } else {
                 $matchedPrice = $tent->prices->where('capacity', '=', $adults)->first();
                 if (!$matchedPrice) {
                     $matchedPrice = $tent->prices->sortByDesc('capacity')->first();
                 }
                 
+                $baseTotal = 0;
+                $childTotal = 0;
+
                 // Calculate price night by night (Fri & Sat are weekends)
                 for ($i = 0; $i < $nights; $i++) {
                     $currentDay = $startDate->copy()->addDays($i);
@@ -71,13 +89,27 @@
                         $dailyPrice = $matchedPrice->price_weekday ?? 0;
                     }
 
+                    $baseTotal += $dailyPrice;
+
                     // Add child surcharge
                     if ($children > 0 && isset($matchedPrice->child_price) && $matchedPrice->child_price > 0) {
-                        $dailyPrice += ($matchedPrice->child_price * $children);
+                        $childTotal += ($matchedPrice->child_price * $children);
                     }
-
-                    $totalPrice += $dailyPrice;
                 }
+                
+                $priceBreakdown[] = [
+                    'label' => "Base Price ($adults Adults) for $nights nights",
+                    'amount' => $baseTotal
+                ];
+
+                if ($childTotal > 0) {
+                    $priceBreakdown[] = [
+                        'label' => "Child Surcharge ($children Children x RM" . number_format($matchedPrice->child_price ?? 0, 0) . " x $nights nights)",
+                        'amount' => $childTotal
+                    ];
+                }
+
+                $totalPrice = $baseTotal + $childTotal;
             }
         @endphp
 
@@ -257,16 +289,36 @@
                                     <div class="text-right">
                                         <div class="flex items-center justify-end gap-3 text-sm font-medium text-stone-500 mb-1">
                                             <span>Adult: <span class="text-stone-900 text-base font-semibold">RM{{ number_format($price->adult_price, 0) }}</span></span>
+                                            @if($price->child_price > 0)
                                             <span class="text-stone-300">|</span>
-                                            <span>Child: <span class="text-stone-900 text-base font-semibold">RM{{ number_format($price->child_price, 0) }}</span></span>
+                                            <span class="bg-orange-50 text-orange-700 px-2 py-1 rounded-md border border-orange-200 border-dashed">Child: <span class="font-bold">RM{{ number_format($price->child_price, 0) }}</span></span>
+                                            @endif
                                         </div>
-                                        <p class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest border-t border-stone-200 pt-1 mt-1 inline-block">per night</p>
+                                        <p class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest border-t border-stone-200 pt-1 mt-2 inline-block">per night</p>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
                     @else
                         <!-- Based Price: Show list of prices for capacities -->
+                        @php $firstPrice = $tent->prices->first(); @endphp
+                        @if ($firstPrice && $firstPrice->child_price > 0)
+                        <div class="mb-4 bg-orange-50 border border-orange-200 rounded-xl p-5 flex items-center justify-between shadow-sm">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-inner">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                </div>
+                                <div>
+                                    <p class="text-base font-semibold tracking-wide text-orange-900">Child Surcharge</p>
+                                    <p class="text-xs font-medium text-orange-700/80 mt-0.5">Applicable for extra children (4-12 years) in group</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl font-bold text-orange-900">RM{{ number_format($firstPrice->child_price, 0) }}</span>
+                                <span class="text-[10px] font-semibold text-orange-700/70 uppercase tracking-widest block mt-0.5">per child / night</span>
+                            </div>
+                        </div>
+                        @endif
                         <div class="overflow-hidden rounded-xl border border-stone-200">
                             <table class="w-full text-left">
                                 <thead class="bg-stone-50 border-b border-stone-200">
@@ -330,16 +382,31 @@
                                 </div>
                                 <p class="text-[9px] font-medium text-stone-400 mt-2 uppercase tracking-widest border-t border-stone-100 pt-2 inline-block">For {{ $adults }} Adults @if($children > 0), {{ $children }} Children @endif</p>
                                 @if($tent->pricing_type == 'base' && $children > 0 && isset($matchedPrice->child_price) && $matchedPrice->child_price > 0)
-                                    <p class="text-[10px] font-medium text-stone-500 mt-2 flex items-center gap-1">
-                                        <svg class="w-3 h-3 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        Includes RM{{ number_format($matchedPrice->child_price, 0) }} child surcharge
-                                    </p>
+                                   <!-- Hidden old display message -->
                                 @endif
                             </div>
                             <div class="bg-stone-900 text-white px-3 py-2 rounded-lg shadow-sm flex flex-col items-center justify-center">
                                 <span class="text-lg font-bold leading-none">9.2</span>
                                 <span class="text-[8px] font-semibold uppercase tracking-widest mt-1">Excellent</span>
                             </div>
+                        </div>
+
+                        <!-- Price Breakdown -->
+                        <div class="mb-8 p-5 bg-stone-50 rounded-xl border border-stone-200 shadow-sm">
+                             <p class="text-[10px] font-semibold text-stone-500 uppercase tracking-widest mb-4">Price Breakdown</p>
+                             <div class="space-y-3">
+                                 @foreach($priceBreakdown as $item)
+                                 <div class="flex items-center justify-between">
+                                     <span class="text-sm font-medium text-stone-600">{{ $item['label'] }}</span>
+                                     <span class="text-sm font-semibold text-stone-900">RM{{ number_format($item['amount'], 0) }}</span>
+                                 </div>
+                                 @endforeach
+                                 <div class="h-px bg-stone-200 my-3"></div>
+                                 <div class="flex items-center justify-between">
+                                     <span class="text-base font-bold text-stone-900">Total</span>
+                                     <span class="text-base font-bold text-stone-900">RM{{ number_format($totalPrice, 0) }}</span>
+                                 </div>
+                             </div>
                         </div>
 
                         <div class="space-y-4 mb-8">
@@ -376,8 +443,7 @@
                             </div>
                         </div>
                         @if($tent->slots_count > 0)
-                            <form action="{{ route('booking.checkout') }}" method="POST">
-                                @csrf
+                            <form action="{{ route('booking.checkout.page') }}" method="GET">
                                 <input type="hidden" name="tent" value="{{ $tent->id}}">
                                 <input type="hidden" name="check_in_date" value="{{ $checkIn }}">
                                 <input type="hidden" name="check_out_date" value="{{ $checkOut }}">

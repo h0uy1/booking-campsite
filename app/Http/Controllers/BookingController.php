@@ -232,6 +232,47 @@ class BookingController extends Controller
 
     // checkAvailability method replaced by user method consolidation
 
+    public function checkoutPage(Request $request)
+    {
+        if (!auth()->check()) {
+            return redirect('/login');
+        }
+
+        $validated = $request->validate([
+            'tent' => 'required|exists:tents,id',
+            'check_in_date' => 'required|date|after_or_equal:today',
+            'check_out_date' => 'required|date|after:check_in_date',
+        ]);
+
+        $tentId = $validated['tent'];
+        $checkIn = $validated['check_in_date'];
+        $checkOut = $validated['check_out_date'];
+        $adults = (int) $request->input('adults', 2);
+        $children = (int) $request->input('children', 0);
+
+        if ($this->isDateBlocked($checkIn, $checkOut)) {
+            return redirect()->back()->with('error', 'These dates are currently unavailable due to a campsite closure.');
+        }
+
+        $tent = Tent::with(['prices', 'images'])->findOrFail($tentId);
+        
+        $totalPrice = $this->computePrice(
+            $tentId,
+            $adults,
+            $children,
+            $checkIn,
+            $checkOut
+        );
+
+        $startDate = \Carbon\Carbon::parse($checkIn);
+        $endDate = \Carbon\Carbon::parse($checkOut);
+        $nights = $startDate->diffInDays($endDate) ?: 1;
+
+        $intent = auth()->user()->createSetupIntent();
+
+        return view('user.checkout', compact('tent', 'checkIn', 'checkOut', 'adults', 'children', 'totalPrice', 'nights', 'intent'));
+    }
+
     public function checkout(Request $request)
     {
         if (!auth()->check()) {
@@ -246,11 +287,14 @@ class BookingController extends Controller
             'customer_email' => 'nullable|email',
             'customer_phone' => 'nullable|string',
             'customer_address' => 'nullable|string',
+            'payment_method_id' => 'required|string',
         ]);
+        $adults = (int) $request->input('adults', 2);
+        $children = (int) $request->input('children', 0);
         $totalPrice = $this->computePrice(
             $validated['tent'],
-            (int) $request->input('adults', 2),
-            (int) $request->input('children', 0),
+            $adults,
+            $children,
             $validated['check_in_date'],
             $validated['check_out_date']
         );
@@ -259,7 +303,7 @@ class BookingController extends Controller
 
         $user = auth()->user();
 
-        return DB::transaction(function () use ($validated, $totalPrice, $expiredAt, $user) {
+        return DB::transaction(function () use ($validated, $totalPrice, $expiredAt, $user, $adults, $children) {
 
             $tentId = $validated['tent'];
             $checkIn = $validated['check_in_date'];
@@ -303,66 +347,53 @@ class BookingController extends Controller
                 'expires_at' => $expiredAt,
                 'customer_email'=> $user->email,
                 'customer_name'=> $user->name,
+                'adults' => $adults,
+                'children' => $children,
             ]);
 
             $amountCents = (int) round($totalPrice * 100);
 
-            $productData = [
-                'name' => $tent->name . " booking from " . $checkIn . " to " . $checkOut,
-            ];
+            try {
+                $payment = $user->charge($amountCents, $validated['payment_method_id'], [
+                    'return_url' => route('checkout.success', ['booking_id' => $booking->id]),
+                ]);
 
-            if ($tent->images->isNotEmpty()) {
-                $firstImage = $tent->images->first()->image_path;
-                $imageUrl = filter_var($firstImage, FILTER_VALIDATE_URL) ? $firstImage : secure_asset('storage/' . $firstImage);
-                
-                // Stripe requires publicly accessible HTTPS URLs, so we avoid adding it on local dev (localhost) 
-                // to prevent Stripe InvalidRequestException crashing the checkout process locally.
-                if (str_starts_with($imageUrl, 'https://') && !str_contains($imageUrl, 'localhost') && !str_contains($imageUrl, '127.0.0.1')) {
-                    $productData['images'] = [$imageUrl];
-                }
+                $booking->update([
+                    'status' => 'confirmed',
+                    'stripe_session_id' => $payment->id
+                ]);
+
+                return redirect()->route('checkout.success', ['booking_id' => $booking->id]);
+
+            } catch (\Laravel\Cashier\Exceptions\IncompletePayment $exception) {
+                $booking->update(['stripe_session_id' => $exception->payment->id]);
+                return redirect()->route(
+                    'cashier.payment',
+                    [$exception->payment->id, 'redirect' => route('checkout.success', ['booking_id' => $booking->id])]
+                );
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', 'Payment failed: ' . $e->getMessage());
             }
-
-            $session = $user->checkout(
-                [
-                    [
-                        'price_data' => [
-                            'currency' => config('cashier.currency') ?: 'myr',
-                            'product_data' => $productData,
-                            'unit_amount' => $amountCents,
-                        ],
-                        'quantity' => 1,
-                    ]
-                ],
-                [
-                    'mode' => 'payment',
-                    'expires_at' => $expiredAt->timestamp,
-                    'metadata' => [
-                        'booking_id' => $booking->id
-                    ],
-                    'success_url' => route('checkout.success') . '?session_id={CHECKOUT_SESSION_ID}',
-                    'cancel_url' => route('checkout.cancel', ['booking' => $booking->id]),
-                    'phone_number_collection' => [
-                        'enabled' => true,
-                    ]
-                ]
-            );
-            $booking->update(['stripe_session_id' => $session->id]);
-            return redirect()->away($session->url);
         });
     }
 
     public function checkoutSuccess(Request $request)
     {
-        $sessionId = $request->query('session_id');
-        if (!$sessionId) {
+        $bookingId = $request->query('booking_id');
+        if (!$bookingId) {
             return redirect()->route('booking.index');
         }
 
         // Securely find the booking for the current user
         $booking = Booking::with('slot.tent')
-            ->where('stripe_session_id', $sessionId)
+            ->where('id', $bookingId)
             ->where('user_id', auth()->id())
             ->firstOrFail();
+            
+        // If it was via cashier.payment (3D Secure), the state might be incomplete before checking. Cashier handles it if 'redirect' param is sent. 
+        if ($booking->status === 'pending') {
+            $booking->update(['status' => 'confirmed']);
+        }
 
         return view('checkout-success', compact('booking'));
     }

@@ -58,16 +58,20 @@
                     </div>
                     <div class="flex-1 px-6 py-3 border-r border-stone-100 flex flex-col justify-center">
                         <label for="adults" class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1">Adults</label>
-                        <div class="flex items-center gap-2">
-                             <input type="number" id="adults" name="adults" min="1" value="{{ old('adults', $adults) }}" 
-                               class="text-sm font-medium text-stone-900 bg-transparent border-none p-0 focus:ring-0 w-8 text-center md:text-left">
+                        <div class="flex items-center gap-3">
+                             <button type="button" onclick="adjustQuantity('adults', -1)" class="w-6 h-6 rounded-full border border-stone-300 flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors">-</button>
+                             <input type="number" id="adults" name="adults" min="1" value="{{ old('adults', $adults) }}" readonly
+                               class="text-sm font-medium text-stone-900 bg-transparent border-none p-0 focus:ring-0 w-6 text-center pointer-events-none appearance-none">
+                             <button type="button" onclick="adjustQuantity('adults', 1)" class="w-6 h-6 rounded-full border border-stone-300 flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors">+</button>
                         </div>
                     </div>
                     <div class="flex-1 px-6 py-3 flex flex-col justify-center">
-                        <label for="children" class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1">Children</label>
-                        <div class="flex items-center gap-2">
-                             <input type="number" id="children" name="children" min="0" value="{{ old('children', $children) }}" 
-                               class="text-sm font-medium text-stone-900 bg-transparent border-none p-0 focus:ring-0 w-8 text-center md:text-left">
+                        <label for="children" class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1">Children <span class="capitalize normal-case text-stone-300">(4-12 yrs)</span></label>
+                        <div class="flex items-center gap-3">
+                             <button type="button" onclick="adjustQuantity('children', -1)" class="w-6 h-6 rounded-full border border-stone-300 flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors">-</button>
+                             <input type="number" id="children" name="children" min="0" value="{{ old('children', $children) }}" readonly
+                               class="text-sm font-medium text-stone-900 bg-transparent border-none p-0 focus:ring-0 w-6 text-center pointer-events-none appearance-none">
+                             <button type="button" onclick="adjustQuantity('children', 1)" class="w-6 h-6 rounded-full border border-stone-300 flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors">+</button>
                         </div>
                     </div>
                     <button type="submit" id="search-btn-desktop" class="bg-stone-900 hover:bg-stone-800 text-white px-8 py-4 rounded-xl font-medium tracking-wide text-sm transition-all transform hover:-translate-y-0.5 shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
@@ -96,15 +100,19 @@
                     <div class="flex-1 border-b border-stone-100 pb-4">
                         <label for="adults_mobile" class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1 block">Adults</label>
                         <div class="flex items-center gap-4">
-                             <input type="number" id="adults_mobile" name="adults" min="1" value="{{ old('adults', $adults) }}" 
-                                    class="text-sm font-medium text-stone-900 bg-transparent border-none p-0 focus:ring-0 w-8 text-left">
+                            <button type="button" onclick="adjustQuantity('adults_mobile', -1)" class="w-8 h-8 rounded-full border border-stone-300 flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors">-</button>
+                            <input type="number" id="adults_mobile" name="adults" min="1" value="{{ old('adults', $adults) }}" readonly
+                                    class="text-base font-medium text-stone-900 bg-transparent border-none p-0 focus:ring-0 w-6 text-center pointer-events-none appearance-none">
+                            <button type="button" onclick="adjustQuantity('adults_mobile', 1)" class="w-8 h-8 rounded-full border border-stone-300 flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors">+</button>
                         </div>
                     </div>
                     <div class="flex-1">
-                        <label for="children_mobile" class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1 block">Children</label>
+                        <label for="children_mobile" class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1 block">Children <span class="capitalize normal-case text-stone-300">(4-12 yrs)</span></label>
                         <div class="flex items-center gap-4">
-                             <input type="number" id="children_mobile" name="children" min="0" value="{{ old('children', $children) }}" 
-                                    class="text-sm font-medium text-stone-900 bg-transparent border-none p-0 focus:ring-0 w-8 text-left">
+                            <button type="button" onclick="adjustQuantity('children_mobile', -1)" class="w-8 h-8 rounded-full border border-stone-300 flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors">-</button>
+                            <input type="number" id="children_mobile" name="children" min="0" value="{{ old('children', $children) }}" readonly
+                                    class="text-base font-medium text-stone-900 bg-transparent border-none p-0 focus:ring-0 w-6 text-center pointer-events-none appearance-none">
+                            <button type="button" onclick="adjustQuantity('children_mobile', 1)" class="w-8 h-8 rounded-full border border-stone-300 flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors">+</button>
                         </div>
                     </div>
                 </div>
@@ -165,6 +173,18 @@
     </div>
 
     <script>
+        window.adjustQuantity = function(inputId, amount) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const min = parseInt(input.min) || 0;
+            let val = parseInt(input.value) || 0;
+            if (val + amount >= min) {
+                input.value = val + amount;
+                const event = new Event('change');
+                input.dispatchEvent(event);
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             const checkInInput = document.getElementById('check_in');
             const checkOutInput = document.getElementById('check_out');
