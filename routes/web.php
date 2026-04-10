@@ -55,6 +55,14 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::post('/admin/slots/update-state', [SlotStatusController::class, 'updateState'])->name('admin.slots.update_state');
 
     // Admin Settings
+    Route::get('/admin/clear-cache', function() {
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        \Illuminate\Support\Facades\Artisan::call('route:clear');
+        return "Cache cleared successfully!";
+    })->name('admin.clear_cache');
+
     Route::get('/admin/profile', [AdminProfileController::class, 'edit'])->name('admin.profile.edit');
     Route::get('/admin/tents/create', [TentController::class, 'create']);
     Route::post('/admin/tents', [TentController::class, 'store']);
