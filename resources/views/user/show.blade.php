@@ -37,10 +37,10 @@
             $galleryImages = collect();
             if ($tent->images->isNotEmpty()) {
                 foreach ($tent->images as $img) {
-                    $galleryImages->push(asset('storage/' . $img->image_path));
+                    $galleryImages->push(Storage::url($img->image_path));
                 }
             } elseif ($tent->image) {
-                $galleryImages->push(asset('storage/' . $tent->image));
+                $galleryImages->push(Storage::url($tent->image));
             }
             $count = $galleryImages->count();
             // Price Calculation
@@ -319,7 +319,7 @@
                             </div>
                         </div>
                         @endif
-                        <div class="overflow-hidden rounded-xl border border-stone-200">
+                        <div class="overflow-auto rounded-xl border border-stone-200">
                             <table class="w-full text-left">
                                 <thead class="bg-stone-50 border-b border-stone-200">
                                     <tr>

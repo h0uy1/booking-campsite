@@ -85,9 +85,9 @@
                         @php
                             $imageUrl = null;
                             if ($tent->images && $tent->images->isNotEmpty()) {
-                                $imageUrl = asset('storage/' . $tent->images->first()->image_path);
+                                $imageUrl = Storage::url($tent->images->first()->image_path);
                             } elseif ($tent->image) {
-                                $imageUrl = asset('storage/' . $tent->image);
+                                $imageUrl = Storage::url($tent->image);
                             }
                         @endphp
                         

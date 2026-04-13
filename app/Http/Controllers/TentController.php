@@ -73,7 +73,7 @@ class TentController extends Controller
             // Pick the first image as the main image (thumbnail)
             $mainImagePath = null;
             if ($request->hasFile('images')) {
-                $mainImagePath = $request->file('images')[0]->store('tents', 'public');
+                $mainImagePath = $request->file('images')[0]->store('tents', config('filesystems.default'));
             }
 
             $tent = Tent::create([
@@ -87,7 +87,7 @@ class TentController extends Controller
             // Save all images to tent_images table
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $index => $image) {
-                    $path = $image->store('tents', 'public');
+                    $path = $image->store('tents', config('filesystems.default'));
                     $tent->images()->create(['image_path' => $path]);
                     if ($index === 0) {
                         $tent->update(['image' => $path]);
@@ -192,7 +192,7 @@ class TentController extends Controller
                 foreach ($request->remove_images as $imageId) {
                     $image = $tent->images()->find($imageId);
                     if ($image) {
-                        Storage::disk('public')->delete($image->image_path);
+                        Storage::disk(config('filesystems.default'))->delete($image->image_path);
                         $image->delete();
                     }
                 }
@@ -201,7 +201,7 @@ class TentController extends Controller
             // Handle new images
             if ($request->hasFile('new_images')) {
                 foreach ($request->file('new_images') as $image) {
-                    $path = $image->store('tents', 'public');
+                    $path = $image->store('tents', config('filesystems.default'));
                     $tent->images()->create(['image_path' => $path]);
                 }
             }
@@ -283,12 +283,12 @@ class TentController extends Controller
     {
         // Delete all associated gallery images from storage
         foreach ($tent->images as $image) {
-            Storage::disk('public')->delete($image->image_path);
+            Storage::disk(config('filesystems.default'))->delete($image->image_path);
         }
 
         // Delete legacy/cover image if it exists
         if ($tent->image) {
-            Storage::disk('public')->delete($tent->image);
+            Storage::disk(config('filesystems.default'))->delete($tent->image);
         }
 
         $tent->delete();

@@ -5,11 +5,11 @@
         <!-- Left: Image Section (33%) -->
         <div class="relative w-full md:w-1/3 h-56 md:h-full overflow-hidden">
             @if($tent->images->isNotEmpty())
-                <img src="{{ asset('storage/' . $tent->images->first()->image_path) }}"
+                <img src="{{ Storage::url($tent->images->first()->image_path) }}"
                      class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                      alt="{{ $tent->name }}">
             @elseif($tent->image)
-                 <img src="{{ asset('storage/' . $tent->image) }}"
+                 <img src="{{ Storage::url($tent->image) }}"
                      class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                      alt="{{ $tent->name }}">
             @else
