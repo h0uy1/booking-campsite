@@ -63,9 +63,8 @@
                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                                         @foreach ($tent->images as $image)
                                             <div class="relative group rounded-lg overflow-hidden shadow-sm">
-                                                <img src="{{ asset('storage/' . $image->image_path) }}" alt="Tent Image"
+                                                <img src="{{ Storage::url($image->image_path) }}" alt="Tent Image"
                                                     class="w-full h-32 object-cover">
-
                                                 <label class="absolute inset-0 cursor-pointer">
                                                     <input type="checkbox" name="remove_images[]"
                                                         value="{{ $image->id }}" class="peer sr-only">
@@ -113,7 +112,7 @@
                                         removal upon save.</p>
                                 @elseif($tent->image)
                                     <div class="mb-6 inline-block relative bg-gray-100 rounded-lg p-2">
-                                        <img src="{{ asset('storage/' . $tent->image) }}" alt="Current Image"
+                                        <img src="{{ Storage::url($tent->image) }}" alt="Current Image"
                                             class="h-40 w-auto object-cover rounded-lg border border-gray-200">
                                         <div
                                             class="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full shadow-sm">
