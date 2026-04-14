@@ -43,6 +43,8 @@ Route::middleware(['auth:admin'])->group(function () {
     Route::put('/admin/bookings/{booking}', [BookingController::class, 'adminUpdate'])->name('admin.bookings.update');
     Route::get('/admin/bookings/occupancy', [BookingController::class, 'adminOccupancy'])->name('admin.bookings.occupancy');
     Route::patch('/admin/bookings/{booking}/status', [BookingController::class, 'adminUpdateStatus'])->name('admin.bookings.status');
+    Route::get('/admin/bookings/{booking}/receipt', [BookingController::class, 'adminDownloadReceipt'])->name('admin.bookings.receipt');
+    Route::post('/admin/bookings/{booking}/send-receipt', [BookingController::class, 'adminSendReceipt'])->name('admin.bookings.send_receipt');
     
     // Blockout Dates
     Route::get('/admin/blockouts', [BlockoutDateController::class, 'index'])->name('admin.blockouts.index');
