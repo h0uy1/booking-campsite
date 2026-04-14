@@ -302,27 +302,29 @@
                         monthlyValues.push(yearDataObj[i] || 0);
                     }
 
+                    // Create gradient for the mountain fill
+                    let gradient = ctx.createLinearGradient(0, 0, 0, 250);
+                    gradient.addColorStop(0, 'rgba(59, 107, 139, 0.5)'); // Top opacity
+                    gradient.addColorStop(1, 'rgba(59, 107, 139, 0.05)'); // Bottom fade
+
                     this.monthlyChartInstance = new Chart(ctx, {
+                        type: 'line',
                         data: {
                             labels: this.months,
                             datasets: [
                                 {
-                                    type: 'line',
+                                    label: 'Sales',
                                     data: monthlyValues,
-                                    borderColor: '#eab308', // Yellow trendline
+                                    borderColor: '#3b6b8b', 
+                                    backgroundColor: gradient,
                                     borderWidth: 2,
-                                    pointBackgroundColor: '#eab308',
-                                    pointRadius: 3,
-                                    fill: false,
-                                    tension: 0.3 // Smooth curves
-                                },
-                                {
-                                    type: 'bar',
-                                    data: monthlyValues,
-                                    backgroundColor: '#3b6b8b',
-                                    hoverBackgroundColor: '#2d5470',
-                                    barThickness: 8,
-                                    borderRadius: 4
+                                    pointBackgroundColor: '#fff',
+                                    pointBorderColor: '#3b6b8b',
+                                    pointBorderWidth: 2,
+                                    pointRadius: 4,
+                                    pointHoverRadius: 6,
+                                    fill: true,
+                                    tension: 0.4 // Smooth curves
                                 }
                             ]
                         },
