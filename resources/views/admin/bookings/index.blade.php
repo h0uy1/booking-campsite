@@ -142,10 +142,46 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="{{ route('admin.bookings.edit', $booking->id) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                                        <svg class="h-4 w-4 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                        Edit
-                                    </a>
+                                    <div class="relative inline-block text-left" x-data="{ openMenu: false }">
+                                        <button @click="openMenu = !openMenu" @click.away="openMenu = false" type="button" class="flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full focus:outline-none transition-colors">
+                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                            </svg>
+                                        </button>
+                                        
+                                        <div x-show="openMenu" 
+                                             x-transition:enter="transition ease-out duration-100" 
+                                             x-transition:enter-start="transform opacity-0 scale-95" 
+                                             x-transition:enter-end="transform opacity-100 scale-100" 
+                                             x-transition:leave="transition ease-in duration-75" 
+                                             x-transition:leave-start="transform opacity-100 scale-100" 
+                                             x-transition:leave-end="transform opacity-0 scale-95" 
+                                             class="origin-top-right absolute right-0 mt-2 w-48 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-30" 
+                                             style="display: none;">
+                                             
+                                             <div class="py-1">
+                                                 <a href="{{ route('admin.bookings.edit', $booking->id) }}" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors">
+                                                     <svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                     Edit Booking
+                                                 </a>
+                                             </div>
+                                             
+                                             <div class="py-1">
+                                                 <a href="{{ route('admin.bookings.receipt', $booking->id) }}" class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                                                     <svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                     Download PDF
+                                                 </a>
+                                                 
+                                                 <form action="{{ route('admin.bookings.send_receipt', $booking->id) }}" method="POST" onsubmit="return confirm('Send email receipt to customer?');">
+                                                     @csrf
+                                                     <button type="submit" class="w-full group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors text-left focus:outline-none">
+                                                         <svg class="mr-3 h-4 w-4 text-gray-400 group-hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                                         Email Receipt
+                                                     </button>
+                                                 </form>
+                                             </div>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

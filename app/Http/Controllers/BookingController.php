@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BookingReceiptMail;
 
 class BookingController extends Controller
 {
@@ -800,5 +803,34 @@ class BookingController extends Controller
         }
 
         return view('admin.bookings.occupancy', compact('tents', 'dates', 'matrix', 'startDate', 'prevDate', 'nextDate', 'blockoutMatrix'));
+    }
+
+    public function adminDownloadReceipt(Booking $booking)
+    {
+        $booking->load(['user', 'slot.tent']);
+        $pdf = Pdf::loadView('pdf.receipt', compact('booking'));
+        
+        return $pdf->download('Booking-Receipt-BK-' . sprintf('%05d', $booking->id) . '.pdf');
+    }
+
+    public function adminSendReceipt(Booking $booking)
+    {
+        $booking->load(['user', 'slot.tent']);
+        
+        $customerEmail = $booking->customer_email ?? $booking->user->email ?? null;
+        
+        if (!$customerEmail) {
+            return back()->with('error', 'No email address found for this booking.');
+        }
+
+        try {
+            $pdf = Pdf::loadView('pdf.receipt', compact('booking'));
+            
+            Mail::to($customerEmail)->send(new BookingReceiptMail($booking, $pdf->output()));
+            
+            return back()->with('success', 'Receipt emailed successfully to ' . $customerEmail);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to send email: ' . $e->getMessage());
+        }
     }
 }
