@@ -15,7 +15,7 @@ class RedirectAdminFromPublicPages
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth('admin')->check() && !$request->is('admin*')) {
+        if (auth('admin')->check() && !$request->is('admin*') && !$request->is('logout')) {
             return redirect()->route('admin.dashboard');
         }
 

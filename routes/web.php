@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TentController;
 use App\Http\Controllers\BookingController;
-use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\UnifiedLoginController;
 use App\Http\Controllers\BlockoutDateController;
 use App\Http\Controllers\SlotStatusController;
 
@@ -63,7 +63,7 @@ Route::middleware(['auth:admin'])->group(function () {
         return "Cache cleared successfully!";
     })->name('admin.clear_cache');
 
-    Route::get('/admin/profile', [AdminProfileController::class, 'edit'])->name('admin.profile.edit');
+    // Route::get('/admin/profile', [AdminProfileController::class, 'edit'])->name('admin.profile.edit');
     Route::get('/admin/tents/create', [TentController::class, 'create']);
     Route::post('/admin/tents', [TentController::class, 'store']);
     Route::get('/admin/tents', [TentController::class, 'index']);
@@ -79,12 +79,8 @@ Route::post('/checkout', [BookingController::class, 'checkout'])->name('booking.
 Route::get('/booking/{id}', [BookingController::class, 'show'])->name('booking.show');
 Route::get('/viewer-count/{id}', [BookingController::class, 'getViewerCount'])->name('booking.viewerCount');
 
-Route::get('/admin/login', function () {
-    return view('admin.login');
-})->name('admin.login');
-
-Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
-Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+Route::post('/login', [UnifiedLoginController::class, 'login']);
+Route::post('/logout', [UnifiedLoginController::class, 'logout'])->name('logout');
 
 Route::get('checkout/success', [BookingController::class, 'checkoutSuccess'])->name('checkout.success');
 
