@@ -6,6 +6,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\UnifiedLoginController;
 use App\Http\Controllers\BlockoutDateController;
 use App\Http\Controllers\SlotStatusController;
+use App\Http\Controllers\SalesController;
 
 Route::get('/', function () {
     return redirect('/user');
@@ -55,6 +56,9 @@ Route::middleware(['auth:admin'])->group(function () {
     // Slot Status Dashboard
     Route::get('/admin/slots', [SlotStatusController::class, 'index'])->name('admin.slots.index');
     Route::post('/admin/slots/update-state', [SlotStatusController::class, 'updateState'])->name('admin.slots.update_state');
+
+    // Sales Dashboard
+    Route::get('/admin/sales', [SalesController::class, 'index'])->name('admin.sales.index');
 
     // Admin Settings
     Route::get('/admin/clear-cache', function() {
