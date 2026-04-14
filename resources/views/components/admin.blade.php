@@ -138,6 +138,14 @@
                 <span class="font-medium">Occupancy Matrix</span>
             </a>
 
+            <a href="/admin/sales" 
+               class="{{ request()->is('admin/sales*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} group flex items-center gap-3 p-3 rounded-xl transition-all">
+                <svg class="w-5 h-5 {{ request()->is('admin/sales*') ? 'text-green-400' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                <span class="font-medium">Sales Analytics</span>
+            </a>
+
             <a href="/admin/blockouts" 
                class="{{ request()->is('admin/blockouts*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} group flex items-center gap-3 p-3 rounded-xl transition-all">
                 <svg class="w-5 h-5 {{ request()->is('admin/blockouts*') ? 'text-red-400' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
