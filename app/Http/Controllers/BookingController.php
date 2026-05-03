@@ -226,9 +226,6 @@ class BookingController extends Controller
 
     public function checkoutPage(Request $request)
     {
-        if (!auth()->check()) {
-            return redirect('/login');
-        }
 
         $validated = $request->validate([
             'tent' => 'required|exists:tents,id',
@@ -250,80 +247,89 @@ class BookingController extends Controller
 
         $totalPrice = $this->computePrice($tentId, $adults, $children, $checkIn, $checkOut);
 
-        $startDate = \Carbon\Carbon::parse($checkIn);
-        $endDate = \Carbon\Carbon::parse($checkOut);
+        $startDate = Carbon::parse($checkIn);
+        $endDate = Carbon::parse($checkOut);
         $nights = $startDate->diffInDays($endDate) ?: 1;
 
-        $intent = auth()->user()->createSetupIntent();
 
-        return view('user.checkout', compact('tent', 'checkIn', 'checkOut', 'adults', 'children', 'totalPrice', 'nights', 'intent'));
+        return view('user.checkout', compact('tent', 'checkIn', 'checkOut', 'adults', 'children', 'totalPrice', 'nights'));
     }
 
     public function checkout(Request $request)
     {
-        if (!auth()->check()) {
-            return redirect('/login');
-        }
         $expiredAt = now()->addMinute(30);
+
         $validated = $request->validate([
             'tent' => 'required|exists:tents,id',
             'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
-            'customer_name' => 'nullable|string',
-            'customer_email' => 'nullable|email',
+            'customer_name' => 'required|string',
+            'customer_email' => 'required|email',
             'customer_phone' => 'nullable|string',
             'customer_address' => 'nullable|string',
             'payment_method_id' => 'required|string',
         ]);
+
         $adults = (int) $request->input('adults', 2);
         $children = (int) $request->input('children', 0);
-        $totalPrice = $this->computePrice($validated['tent'], $adults, $children, $validated['check_in_date'], $validated['check_out_date']);
-        $validated['total_price'] = $totalPrice;
-        $validated['expires_at'] = $expiredAt;
 
-        $user = auth()->user();
+        $totalPrice = $this->computePrice(
+            $validated['tent'],
+            $adults,
+            $children,
+            $validated['check_in_date'],
+            $validated['check_out_date']
+        );
 
-        return DB::transaction(function () use ($validated, $totalPrice, $expiredAt, $user, $adults, $children) {
+        $user = auth()->user(); // may be null now
+
+        return DB::transaction(function () use (
+            $validated,
+            $totalPrice,
+            $expiredAt,
+            $user,
+            $adults,
+            $children
+        ) {
+
             $tentId = $validated['tent'];
             $checkIn = $validated['check_in_date'];
             $checkOut = $validated['check_out_date'];
 
             if ($this->isDateBlocked($checkIn, $checkOut)) {
-                return redirect()->back()->with('error', 'These dates are currently unavailable due to a campsite closure.');
+                return redirect()->back()->with('error', 'Dates unavailable.');
             }
 
             $availableSlot = Slot::where('tent_id', $tentId)
-                ->whereDoesntHave('pauses', function ($q) use ($checkIn, $checkOut) {
-                    $q->where('start_date', '<', $checkOut)->where('end_date', '>', $checkIn);
-                })
                 ->lockForUpdate()
                 ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                     $query
                         ->where('check_in_date', '<', $checkOut)
                         ->where('check_out_date', '>', $checkIn)
                         ->where(function ($q) {
-                            $q->where('status', 'confirmed')->orWhere(function ($q2) {
-                                $q2->where('status', 'pending')->where('expires_at', '>', now());
-                            });
+                            $q->where('status', 'confirmed')
+                                ->orWhere(function ($q2) {
+                                    $q2->where('status', 'pending')
+                                        ->where('expires_at', '>', now());
+                                });
                         });
                 })
-                ->orderBy('id')
                 ->first();
 
             if (!$availableSlot) {
-                abort(409, 'No available slot for selected dates.');
+                abort(409, 'No available slot.');
             }
-            $tent = Tent::with('images')->findOrFail($tentId);
+
             $booking = Booking::create([
-                'user_id' => $user->id,
+                'user_id' => $user?->id, // ✅ null for guest
                 'slot_id' => $availableSlot->id,
                 'check_in_date' => $checkIn,
                 'check_out_date' => $checkOut,
                 'status' => 'pending',
                 'total_price' => $totalPrice,
                 'expires_at' => $expiredAt,
-                'customer_email' => $user->email ?? $validated['customer_email'],
-                'customer_name' => $user->name ?? $validated['customer_name'],
+                'customer_email' => $validated['customer_email'],
+                'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'],
                 'adults' => $adults,
                 'children' => $children,
@@ -332,28 +338,36 @@ class BookingController extends Controller
             $amountCents = (int) round($totalPrice * 100);
 
             try {
-                $user->createOrGetStripeCustomer();
-                $user->addPaymentMethod($validated['payment_method_id']);
-                $user->updateDefaultPaymentMethod($validated['payment_method_id']);
+                // ✅ Use Stripe SDK directly (NO Cashier dependency on user)
+                $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
 
-                $payment = $user->charge($amountCents, $validated['payment_method_id'], [
-                    'return_url' => route('checkout.success', ['booking_id' => $booking->id]),
-                    'metadata' => [
-                        'booking_id' => $booking->id,
+                $paymentIntent = $stripe->paymentIntents->create(
+                    [
+                        'amount' => $amountCents,
+                        'currency' => 'myr',
+                        'payment_method' => $validated['payment_method_id'],
+                        'confirm' => true,
+                        'receipt_email' => $validated['customer_email'],
+                        'metadata' => [
+                            'booking_id' => $booking->id,
+                        ],
                     ],
-                ]);
+                    [
+                        // ✅ IMPORTANT: idempotency key
+                        'idempotency_key' => 'booking_' . $booking->id
+                    ]
+                );
 
                 $booking->update([
-                    'stripe_payment_intent_id' => $payment->id,
+                    'stripe_payment_intent_id' => $paymentIntent->id,
                 ]);
 
-                return redirect()->route('checkout.success', ['booking_id' => $booking->id]);
-            } catch (\Laravel\Cashier\Exceptions\IncompletePayment $exception) {
-                $booking->update(['stripe_payment_intent_id' => $exception->payment->id]);
-                return redirect()->route('cashier.payment', [$exception->payment->id, 'redirect' => route('checkout.success', ['booking_id' => $booking->id])]);
+                return redirect()->route('checkout.success', [
+                    'booking_id' => $booking->id
+                ]);
             } catch (\Exception $e) {
                 return redirect()
-                    ->back()
+                    ->route('checkout.cancel')
                     ->with('error', 'Payment failed: ' . $e->getMessage());
             }
         });
