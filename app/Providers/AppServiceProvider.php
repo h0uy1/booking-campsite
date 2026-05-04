@@ -24,5 +24,9 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Pagination\Paginator::useTailwind();
         Event::listen(WebhookReceived::class, StripeEventListener::class);
+        Event::listen([
+            \Illuminate\Auth\Events\Login::class,
+            \Illuminate\Auth\Events\Registered::class,
+        ], \App\Listeners\LinkGuestBookings::class);
     }
 }

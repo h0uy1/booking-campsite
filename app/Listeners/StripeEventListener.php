@@ -34,10 +34,20 @@ class StripeEventListener
             $booking = Booking::with('user', 'slot.tent')->find($bookingId);
 
             if ($booking && $booking->status === "pending") {
-                $booking->update([
+                $updateData = [
                     'status' => 'confirmed',
                     'stripe_payment_intent_id' => $intent['id'],
-                ]);
+                ];
+
+                // Link to user if they already have an account
+                if (!$booking->user_id) {
+                    $user = \App\Models\User::where('email', $booking->customer_email)->first();
+                    if ($user) {
+                        $updateData['user_id'] = $user->id;
+                    }
+                }
+
+                $booking->update($updateData);
 
                 // Generate PDF receipt
                 $pdf = Pdf::loadView('pdf.receipt', ['booking' => $booking]);
@@ -59,6 +69,19 @@ class StripeEventListener
                         ]
                     ]);
                 }
+            }
+        }
+
+        if ($payload['type'] === 'payment_intent.payment_failed') {
+            $intent = $payload['data']['object'];
+
+            $bookingId = $intent['metadata']['booking_id'] ?? null;
+            $booking = Booking::find($bookingId);
+
+            if ($booking) {
+                $booking->update([
+                    'status' => 'cancelled',
+                ]);
             }
         }
     }
