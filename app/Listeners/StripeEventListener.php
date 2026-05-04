@@ -56,18 +56,22 @@ class StripeEventListener
                 $recipientEmail = $booking->customer_email ?? $booking->user?->email;
 
                 if ($recipientEmail) {
-                    Resend::emails()->send([
-                        'from' => 'Tam Durian Farm Campsite <onboarding@resend.dev>',
-                        'to' => [$recipientEmail],
-                        'subject' => 'Booking Confirmed - Tam Durian Farm Campsite',
-                        'html' => view('emails.booking_confirmation', ['booking' => $booking])->render(),
-                        'attachments' => [
-                            [
-                                'filename' => 'receipt-BK' . str_pad($booking->id, 6, '0', STR_PAD_LEFT) . '.pdf',
-                                'content' => base64_encode($pdf->output()),
+                    try {
+                        Resend::emails()->send([
+                            'from' => 'Tam Durian Farm Campsite <bookings@mail.tamdurianfarm.site>',
+                            'to' => [$recipientEmail],
+                            'subject' => 'Booking Confirmed - Tam Durian Farm Campsite',
+                            'html' => view('emails.booking_confirmation', ['booking' => $booking])->render(),
+                            'attachments' => [
+                                [
+                                    'filename' => 'receipt-BK' . str_pad($booking->id, 6, '0', STR_PAD_LEFT) . '.pdf',
+                                    'content' => base64_encode($pdf->output()),
+                                ]
                             ]
-                        ]
-                    ]);
+                        ]);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Failed to send booking confirmation email for Booking #{$booking->id}: " . $e->getMessage());
+                    }
                 }
             }
         }
