@@ -33,6 +33,7 @@ class BookingReceiptMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+            from: new \Illuminate\Mail\Mailables\Address('bookings@mail.tamdurianfarm.site', 'Tam Durian Farm Campsite'),
             subject: 'Your Booking Receipt - #BK-' . sprintf('%05d', $this->booking->id),
         );
     }
