@@ -267,7 +267,6 @@ class BookingController extends Controller
             'customer_email' => 'required|email',
             'customer_phone' => 'nullable|string',
             'customer_address' => 'nullable|string',
-            'payment_method_id' => 'required|string',
         ]);
 
         $adults = (int) $request->input('adults', 2);
@@ -345,8 +344,7 @@ class BookingController extends Controller
                     [
                         'amount' => $amountCents,
                         'currency' => 'myr',
-                        'payment_method' => $validated['payment_method_id'],
-                        'confirm' => true,
+                        'automatic_payment_methods' => ['enabled' => true],
                         'receipt_email' => $validated['customer_email'],
                         'metadata' => [
                             'booking_id' => $booking->id,
@@ -362,13 +360,14 @@ class BookingController extends Controller
                     'stripe_payment_intent_id' => $paymentIntent->id,
                 ]);
 
-                return redirect()->route('checkout.success', [
+                return response()->json([
+                    'clientSecret' => $paymentIntent->client_secret,
                     'booking_id' => $booking->id
                 ]);
             } catch (\Exception $e) {
-                return redirect()
-                    ->route('checkout.cancel')
-                    ->with('error', 'Payment failed: ' . $e->getMessage());
+                return response()->json([
+                    'error' => 'Payment failed: ' . $e->getMessage()
+                ], 400);
             }
         });
     }
@@ -380,11 +379,14 @@ class BookingController extends Controller
             return redirect()->route('booking.index');
         }
 
-        // Securely find the booking for the current user
-        $booking = Booking::with('slot.tent')
-            ->where('id', $bookingId)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+        // Find the booking by ID
+        $booking = Booking::with('slot.tent')->findOrFail($bookingId);
+
+        // Security check: If the booking is owned by a user, 
+        // and the current visitor is logged in as a DIFFERENT user, block it.
+        if ($booking->user_id && auth()->check() && $booking->user_id !== auth()->id()) {
+            abort(404);
+        }
 
         // If it was via cashier.payment (3D Secure), the state might be incomplete before checking.
         // Cashier handles it if 'redirect' param is sent, but we rely on the webhook for statusMaster.

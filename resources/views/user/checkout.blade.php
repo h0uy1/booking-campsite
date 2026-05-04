@@ -136,7 +136,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label for="first_name" class="block text-xs font-semibold text-stone-500 uppercase tracking-widest mb-2">First Name</label>
-                                <input type="text" id="first_name" name="customer_name" class="w-full bg-stone-50 border border-stone-200 text-stone-900 text-sm rounded-xl focus:ring-stone-500 focus:border-stone-500 block p-3.5 transition-colors" placeholder="First Name" value="{{ auth()->user()->name }}" required>
+                                <input type="text" id="first_name" name="customer_name" class="w-full bg-stone-50 border border-stone-200 text-stone-900 text-sm rounded-xl focus:ring-stone-500 focus:border-stone-500 block p-3.5 transition-colors" placeholder="First Name" value="{{ auth()->user()?->name }}" required>
                             </div>
                             <div>
                                 <label for="last_name" class="block text-xs font-semibold text-stone-500 uppercase tracking-widest mb-2">Last Name</label>
@@ -184,7 +184,7 @@
                             </div>
                             <div>
                                 <label for="email" class="block text-xs font-semibold text-stone-500 uppercase tracking-widest mb-2">Email Address <span class="text-red-500">*</span></label>
-                                <input type="email" id="email" name="customer_email" class="w-full bg-stone-50 border border-stone-200 text-stone-900 text-sm rounded-xl focus:ring-stone-500 focus:border-stone-500 block p-3.5 transition-colors" placeholder="example@email.com" value="{{ auth()->user()->email }}" required>
+                                <input type="email" id="email" name="customer_email" class="w-full bg-stone-50 border border-stone-200 text-stone-900 text-sm rounded-xl focus:ring-stone-500 focus:border-stone-500 block p-3.5 transition-colors" placeholder="example@email.com" value="{{ auth()->user()?->email }}" required>
                             </div>
                         </div>
                     </div>
@@ -386,47 +386,83 @@
             var submitText = document.getElementById('submit-text');
             var spinner = document.getElementById('spinner');
 
-            var clientSecret = '{{ $intent->client_secret }}';
             var cardHolderName = document.getElementById('first_name'); 
+            var cardHolderLastName = document.getElementById('last_name');
             var customerEmail = document.getElementById('email');
 
-            form.addEventListener('submit', function(event) {
+            form.addEventListener('submit', async function(event) {
                 event.preventDefault();
 
                 if (submitBtn.disabled) return;
-                
+
                 submitBtn.disabled = true;
                 submitText.textContent = 'Processing...';
                 spinner.classList.remove('hidden');
 
-                stripe.confirmCardSetup(
-                    clientSecret, {
-                        payment_method: {
-                            card: card,
-                            billing_details: {
-                                name: cardHolderName ? cardHolderName.value : 'Guest',
-                                email: customerEmail ? customerEmail.value : ''
+                try {
+                    // 1️⃣ Call your backend FIRST
+                    const response = await fetch("{{ route('booking.checkout') }}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                        },
+                        body: JSON.stringify({
+                            tent: document.querySelector('[name="tent"]').value,
+                            check_in_date: document.querySelector('[name="check_in_date"]').value,
+                            check_out_date: document.querySelector('[name="check_out_date"]').value,
+                            customer_name: cardHolderName.value + " " + cardHolderLastName.value,
+                            customer_email: customerEmail.value,
+                            customer_phone: document.querySelector('[name="customer_phone"]').value,
+                            customer_address: document.querySelector('[name="customer_address"]').value,
+                            adults: document.querySelector('[name="adults"]').value,
+                            children: document.querySelector('[name="children"]').value,
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || errorData.message || 'Server validation failed');
+                    }
+
+                    const data = await response.json();
+
+                    // 2️⃣ Confirm payment on frontend
+                    const { error, paymentIntent } = await stripe.confirmCardPayment(
+                        data.clientSecret,
+                        {
+                            payment_method: {
+                                card: card,
+                                billing_details: {
+                                    name: cardHolderName.value + " " + cardHolderLastName.value,
+                                    email: customerEmail.value,
+                                }
                             }
                         }
-                    }
-                ).then(function(result) {
-                    if (result.error) {
-                        var errorElement = document.getElementById('card-errors');
-                        errorElement.textContent = result.error.message;
-                        
+                    );
+
+                    if (error) {
+                        document.getElementById('card-errors').textContent = error.message;
+
                         submitBtn.disabled = false;
                         submitText.textContent = 'Pay Now';
                         spinner.classList.add('hidden');
-                    } else {
-                        var hiddenInput = document.createElement('input');
-                        hiddenInput.setAttribute('type', 'hidden');
-                        hiddenInput.setAttribute('name', 'payment_method_id');
-                        hiddenInput.setAttribute('value', result.setupIntent.payment_method);
-                        form.appendChild(hiddenInput);
-
-                        form.submit();
+                        return;
                     }
-                });
+
+                    // 3️⃣ Success
+                    if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing') {
+                        window.location.href = "/checkout/success?booking_id=" + data.booking_id;
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById('card-errors').textContent = err.message;
+
+                    submitBtn.disabled = false;
+                    submitText.textContent = 'Pay Now';
+                    spinner.classList.add('hidden');
+                }
             });
         });
     </script>
