@@ -460,7 +460,7 @@
                                 <p class="text-stone-800 font-medium tracking-wide text-lg mb-1">Fully Booked</p>
                                 <p class="text-stone-500 text-[10px] font-semibold uppercase tracking-widest">No units available for these dates</p>
                             </div>
-                            <a href="{{ route('booking.index') }}" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-4 rounded-xl font-medium tracking-wide text-base transition-all shadow-lg flex items-center justify-center mb-6">
+                            <a href="{{ route('user.index') }}" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-4 rounded-xl font-medium tracking-wide text-base transition-all shadow-lg flex items-center justify-center mb-6">
                                 Search other dates
                             </a>
                         @endif

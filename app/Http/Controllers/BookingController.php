@@ -376,7 +376,7 @@ class BookingController extends Controller
     {
         $bookingId = $request->query('booking_id');
         if (!$bookingId) {
-            return redirect()->route('booking.index');
+            return redirect()->route('user.index');
         }
 
         // Find the booking by ID
@@ -408,7 +408,7 @@ class BookingController extends Controller
             }
         }
 
-        return redirect()->route('booking.index')->with('error', 'Booking payment was cancelled. Your reservation has been removed.');
+        return redirect()->route('user.index')->with('error', 'Booking payment was cancelled. Your reservation has been removed.');
     }
 
     public function myBookings(Request $request)
