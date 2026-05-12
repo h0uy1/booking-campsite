@@ -79,7 +79,7 @@ Route::middleware(['auth:admin'])->group(function () {
 });
 
 
-Route::get('/user', [BookingController::class, 'user'])->name('booking.index');
+Route::get('/user', [BookingController::class, 'user'])->name('user.index');
 Route::get('/checkout', [BookingController::class, 'checkoutPage'])->name('booking.checkout.page');
 Route::post('/checkout', [BookingController::class, 'checkout'])->name('booking.checkout');
 Route::get('/booking/{id}', [BookingController::class, 'show'])->name('booking.show');
