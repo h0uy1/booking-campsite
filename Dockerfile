@@ -22,7 +22,7 @@ COPY . .
 # 3. INSTALL PHP PACKAGES (COMPOSER)
 # ==========================================
 # We added '--ignore-platform-reqs' to bypass strict version checks if a package demands PHP 8.4 exactly.
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
 RUN php artisan storage:link || true
 
