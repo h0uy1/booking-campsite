@@ -737,8 +737,9 @@ class BookingController extends Controller
         // Get all tents and slots, ordered naturally
         $tents = Tent::with([
             'slots' => function ($query) {
-                $query->orderByRaw('LENGTH(tent_number) ASC, tent_number ASC');
-            },
+                $query->orderByRaw('LENGTH(tent_number) ASC, tent_number ASC')
+                    ->withTrashed();
+            },  
         ])
             ->orderBy('name', 'asc')
             ->get();

@@ -134,7 +134,9 @@ class TentController extends Controller
 
     public function edit(Tent $tent)
     {
-        return view('admin.tents.edit', compact('tent'));
+        $activeSlots = $tent->slots()->orderByRaw('LENGTH(tent_number) ASC, tent_number ASC')->get();
+        $trashedSlots = $tent->slots()->onlyTrashed()->orderBy('deleted_at', 'desc')->get();
+        return view('admin.tents.edit', compact('tent', 'activeSlots', 'trashedSlots'));
     }
 
     public function update(Request $request, Tent $tent)
@@ -257,9 +259,12 @@ class TentController extends Controller
                 foreach ($request->slots as $slotData) {
                     if (!empty($slotData['tent_number'])) {
                         if (isset($slotData['id']) && !empty($slotData['id'])) {
-                            // Update existing
-                            $slot = $tent->slots()->find($slotData['id']);
+                            // Update existing (including trashed)
+                            $slot = $tent->slots()->withTrashed()->find($slotData['id']);
                             if ($slot) {
+                                if ($slot->trashed()) {
+                                    $slot->restore();
+                                }
                                 $slot->update(['tent_number' => $slotData['tent_number']]);
                                 $submittedSlotIds[] = $slot->id;
                             }

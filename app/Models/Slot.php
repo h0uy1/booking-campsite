@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Slot extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    protected $fillable = ['tent_number', 'tent_id', 'is_paused'];
+    protected $fillable = ['tent_number', 'tent_id', 'is_paused','deleted_at'];
 
     public function tent()
     {
