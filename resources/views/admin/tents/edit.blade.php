@@ -446,9 +446,9 @@
                             @php
                                 $slots = old('slots');
                                 if (!$slots) {
-                                    $slots = $tent->slots->isEmpty()
+                                    $slots = $activeSlots->isEmpty()
                                         ? [['tent_number' => '']]
-                                        : $tent->slots->toArray();
+                                        : $activeSlots->toArray();
                                 }
                             @endphp
 
@@ -460,18 +460,16 @@
                                             class="absolute -left-3 top-4 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
                                             Slot {{ $index + 1 }}</div>
 
-                                        @if ($index > 0)
-                                            <button type="button"
-                                                class="remove-slot-btn absolute top-2 right-2 text-red-400 hover:text-red-700 text-sm font-medium transition-colors">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                    </path>
-                                                </svg>
-                                            </button>
-                                        @endif
+                                        <button type="button"
+                                            class="remove-slot-btn absolute top-2 right-2 text-red-400 hover:text-red-700 text-sm font-medium transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                </path>
+                                            </svg>
+                                        </button>
 
                                         <div class="grid grid-cols-1 gap-4 mt-2">
                                             <div>
@@ -501,6 +499,17 @@
                                         class="absolute -left-3 top-4 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
                                         Slot 1</div>
 
+                                    <button type="button"
+                                        class="remove-slot-btn absolute top-2 right-2 text-red-400 hover:text-red-700 text-sm font-medium transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
+                                    </button>
+
                                     <div class="grid grid-cols-1 gap-4 mt-2">
                                         <div>
                                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tent
@@ -525,6 +534,34 @@
                             Add Another Slot
                         </button>
                     </div>
+
+                    <!-- Previously Deleted Slots -->
+                    @if ($trashedSlots->isNotEmpty())
+                        <div class="px-8 py-4 border-t border-gray-100 bg-gray-50/30">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Recently Removed
+                                Slots</h4>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach ($trashedSlots as $trashed)
+                                    <div class="trashed-slot-pill group flex items-center bg-white border border-gray-200 pl-3 pr-1 py-1 rounded-full shadow-sm hover:border-blue-300 transition-all cursor-default"
+                                        title="Deleted on {{ $trashed->deleted_at->format('M d, Y') }}">
+                                        <span class="text-sm font-medium text-gray-600">{{ $trashed->tent_number }}</span>
+                                        <button type="button" 
+                                            onclick="restoreSlot('{{ $trashed->id }}', '{{ $trashed->tent_number }}', this)"
+                                            class="ml-2 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                            title="Restore this slot">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                                </path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <p class="mt-2 text-[10px] text-gray-400 italic">* Click the restore icon to add a previously
+                                removed slot back to the active list.</p>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Actions Bar -->
@@ -773,4 +810,54 @@
             });
         });
     });
+
+    function restoreSlot(id, tentNumber, btnElement) {
+        const slotsContainer = document.getElementById('slots-container');
+        const addSlotBtn = document.getElementById('add-slot-btn');
+        
+        // Calculate new slot index
+        const currentSlots = slotsContainer.querySelectorAll('.slot-row');
+        const index = currentSlots.length;
+        const displayCount = index + 1;
+
+        const newSlot = document.createElement('div');
+        newSlot.className =
+            'slot-row bg-blue-50 border border-blue-200 p-5 rounded-xl relative shadow-sm transition-shadow hover:shadow-md mt-4 animate-pulse';
+        
+        // Remove pulse after a second
+        setTimeout(() => newSlot.classList.remove('animate-pulse'), 1000);
+
+        newSlot.innerHTML = `
+            <div class="absolute -left-3 top-4 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">Slot ${displayCount}</div>
+            <button type="button" class="remove-slot-btn absolute top-2 right-2 text-red-400 hover:text-red-700 text-sm font-medium transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+            
+            <div class="grid grid-cols-1 gap-4 mt-2">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tent Number / Identifier</label>
+                    <input type="hidden" name="slots[${index}][id]" value="${id}">
+                    <input type="text" name="slots[${index}][tent_number]" value="${tentNumber}"
+                        class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
+                        placeholder="e.g., A1, B2, Tent-001">
+                    <p class="mt-1 text-xs text-blue-500 font-medium flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Restoring previously deleted slot
+                    </p>
+                </div>
+            </div>
+        `;
+
+        slotsContainer.appendChild(newSlot);
+
+        // Add remove event listener
+        newSlot.querySelector('.remove-slot-btn').addEventListener('click', function() {
+            newSlot.remove();
+            // Show the pill again
+            btnElement.closest('.trashed-slot-pill').style.display = 'flex';
+        });
+
+        // Hide the pill
+        btnElement.closest('.trashed-slot-pill').style.display = 'none';
+    }
 </script>

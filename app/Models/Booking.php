@@ -27,7 +27,7 @@ class Booking extends Model
     
     public function slot()
     {
-        return $this->belongsTo(Slot::class);
+        return $this->belongsTo(Slot::class)->withTrashed();
     }
 
     public function user()
