@@ -44,7 +44,7 @@
             </div>
 
             <div class="hidden md:block absolute bottom-10 left-12 right-12 z-20">
-                <form id="search-form-desktop" action="{{ route('booking.index') }}" method="GET" class="bg-white/95 backdrop-blur-md p-2 rounded-xl shadow-lg flex items-center gap-4 border border-stone-200/50">
+                <form id="search-form-desktop" action="{{ route('user.index') }}" method="GET" class="bg-white/95 backdrop-blur-md p-2 rounded-xl shadow-lg flex items-center gap-4 border border-stone-200/50">
                     <div class="flex-1 px-6 py-3 border-r border-stone-100 flex flex-col justify-center">
                         <label for="check_in" class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1">Check-in</label>
                         <input type="date" id="check_in" name="check_in" value="{{ old('check_in', $currentDate) }}" 
@@ -84,7 +84,7 @@
 
         <!-- Responsive Search Bar (Mobile Position) -->
         <div class="md:hidden relative px-4 z-20">
-            <form id="search-form-mobile" action="{{ route('booking.index') }}" method="GET" class="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-lg flex flex-col gap-6 border border-stone-100">
+            <form id="search-form-mobile" action="{{ route('user.index') }}" method="GET" class="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-lg flex flex-col gap-6 border border-stone-100">
                 <div class="flex flex-col gap-4">
                     <div class="flex-1 border-b border-stone-100 pb-4">
                         <label for="check_in_mobile" class="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1 block">Check-in</label>
