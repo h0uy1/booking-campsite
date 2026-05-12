@@ -26,7 +26,7 @@
         <!-- Breadcrumbs -->
         <nav class="flex text-sm font-medium tracking-wide" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                <li><a href="{{ route('booking.index', ['check_in' => $checkIn, 'check_out' => $checkOut, 'adults' => $adults, 'children' => $children]) }}" class="text-stone-400 hover:text-stone-900 transition-colors">Packages</a></li>
+                <li><a href="{{ route('user.index', ['check_in' => $checkIn, 'check_out' => $checkOut, 'adults' => $adults, 'children' => $children]) }}" class="text-stone-400 hover:text-stone-900 transition-colors">Packages</a></li>
                 <li><svg class="w-4 h-4 text-stone-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg></li>
                 <li class="text-stone-600">{{ $tent->name }}</li>
             </ol>
